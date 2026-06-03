@@ -1,9 +1,11 @@
 package com.fooddelivery.customer.dto;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class CustomerRequestDto {
     @NotBlank private String name;
     @NotBlank @Email private String email;
