@@ -1,0 +1,238 @@
+package com.fooddelivery.delivery.service;
+
+import com.fooddelivery.common.exception.ResourceNotFoundException;
+import com.fooddelivery.delivery.dto.DeliveryPartnerRequestDto;
+import com.fooddelivery.delivery.dto.DeliveryPartnerResponseDto;
+import com.fooddelivery.delivery.dto.DeliveryStatusUpdateRequestDto;
+import com.fooddelivery.delivery.entity.DeliveryPartner;
+import com.fooddelivery.delivery.entity.DeliveryStatus;
+import com.fooddelivery.delivery.mapper.DeliveryPartnerMapper;
+import com.fooddelivery.delivery.repository.DeliveryPartnerRepository;
+import com.fooddelivery.delivery.service.impl.DeliveryPartnerServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Delivery Partner Service Unit Tests")
+class DeliveryPartnerServiceImplTest {
+
+    @Mock
+    private DeliveryPartnerRepository deliveryPartnerRepository;
+
+    @Mock
+    private DeliveryPartnerMapper deliveryPartnerMapper;
+
+    @InjectMocks
+    private DeliveryPartnerServiceImpl deliveryPartnerService;
+
+    private DeliveryPartnerRequestDto requestDto;
+    private DeliveryPartnerResponseDto responseDto;
+    private DeliveryPartner deliveryPartner;
+
+    @BeforeEach
+    void setUp() {
+        requestDto = DeliveryPartnerRequestDto.builder()
+                .name("Rajesh Kumar")
+                .email("rajesh@delivery.com")
+                .phone("9876543210")
+                .vehicleNumber("MH01AB1234")
+                .isAvailable(true)
+                .build();
+
+        responseDto = DeliveryPartnerResponseDto.builder()
+                .id(1L)
+                .name("Rajesh Kumar")
+                .email("rajesh@delivery.com")
+                .phone("9876543210")
+                .vehicleNumber("MH01AB1234")
+                .isAvailable(true)
+                .status(DeliveryStatus.AVAILABLE.toString())
+                .build();
+
+        deliveryPartner = DeliveryPartner.builder()
+                .id(1L)
+                .name("Rajesh Kumar")
+                .email("rajesh@delivery.com")
+                .phone("9876543210")
+                .vehicleNumber("MH01AB1234")
+                .isAvailable(true)
+                .status(DeliveryStatus.AVAILABLE)
+                .build();
+    }
+
+    @Test
+    @DisplayName("Should register delivery partner successfully")
+    void testRegisterDeliveryPartnerSuccess() {
+        // Arrange
+        when(deliveryPartnerMapper.toEntity(requestDto)).thenReturn(deliveryPartner);
+        when(deliveryPartnerRepository.save(any(DeliveryPartner.class))).thenReturn(deliveryPartner);
+        when(deliveryPartnerMapper.toResponse(deliveryPartner)).thenReturn(responseDto);
+
+        // Act
+        DeliveryPartnerResponseDto result = deliveryPartnerService.register(requestDto);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("Rajesh Kumar");
+        assertThat(result.isAvailable()).isTrue();
+
+        verify(deliveryPartnerRepository).save(any(DeliveryPartner.class));
+    }
+
+    @Test
+    @DisplayName("Should get delivery partner by id successfully")
+    void testGetDeliveryPartnerByIdSuccess() {
+        // Arrange
+        when(deliveryPartnerRepository.findById(1L)).thenReturn(Optional.of(deliveryPartner));
+        when(deliveryPartnerMapper.toResponse(deliveryPartner)).thenReturn(responseDto);
+
+        // Act
+        DeliveryPartnerResponseDto result = deliveryPartnerService.getById(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("Rajesh Kumar");
+
+        verify(deliveryPartnerRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when delivery partner not found")
+    void testGetDeliveryPartnerNotFound() {
+        // Arrange
+        when(deliveryPartnerRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> deliveryPartnerService.getById(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Delivery partner not found");
+
+        verify(deliveryPartnerRepository).findById(999L);
+    }
+
+    @Test
+    @DisplayName("Should get all available delivery partners")
+    void testGetAvailableDeliveryPartners() {
+        // Arrange
+        DeliveryPartner partner2 = DeliveryPartner.builder()
+                .id(2L)
+                .name("Priya Singh")
+                .status(DeliveryStatus.AVAILABLE)
+                .isAvailable(true)
+                .build();
+
+        DeliveryPartnerResponseDto responseDto2 = DeliveryPartnerResponseDto.builder()
+                .id(2L)
+                .name("Priya Singh")
+                .status(DeliveryStatus.AVAILABLE.toString())
+                .isAvailable(true)
+                .build();
+
+        when(deliveryPartnerRepository.findByStatusAndIsAvailableTrue(DeliveryStatus.AVAILABLE))
+                .thenReturn(Arrays.asList(deliveryPartner, partner2));
+        when(deliveryPartnerMapper.toResponse(deliveryPartner)).thenReturn(responseDto);
+        when(deliveryPartnerMapper.toResponse(partner2)).thenReturn(responseDto2);
+
+        // Act
+        List<DeliveryPartnerResponseDto> results = deliveryPartnerService.getAvailable();
+
+        // Assert
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).getName()).isEqualTo("Rajesh Kumar");
+        assertThat(results.get(1).getName()).isEqualTo("Priya Singh");
+
+        verify(deliveryPartnerRepository).findByStatusAndIsAvailableTrue(DeliveryStatus.AVAILABLE);
+    }
+
+    @Test
+    @DisplayName("Should update delivery status successfully")
+    void testUpdateDeliveryStatusSuccess() {
+        // Arrange
+        DeliveryStatusUpdateRequestDto updateRequest = DeliveryStatusUpdateRequestDto.builder()
+                .status(DeliveryStatus.OUT_FOR_DELIVERY.toString())
+                .build();
+
+        DeliveryPartner updatedPartner = DeliveryPartner.builder()
+                .id(1L)
+                .status(DeliveryStatus.OUT_FOR_DELIVERY)
+                .build();
+
+        when(deliveryPartnerRepository.findById(1L)).thenReturn(Optional.of(deliveryPartner));
+        when(deliveryPartnerRepository.save(any(DeliveryPartner.class))).thenReturn(updatedPartner);
+        when(deliveryPartnerMapper.toResponse(any(DeliveryPartner.class))).thenReturn(responseDto);
+
+        // Act
+        DeliveryPartnerResponseDto result = deliveryPartnerService.updateStatus(1L, updateRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+
+        verify(deliveryPartnerRepository).findById(1L);
+        verify(deliveryPartnerRepository).save(any(DeliveryPartner.class));
+    }
+
+    @Test
+    @DisplayName("Should assign delivery to order successfully")
+    void testAssignDeliverySuccess() {
+        // Arrange
+        when(deliveryPartnerRepository.findById(1L)).thenReturn(Optional.of(deliveryPartner));
+        when(deliveryPartnerRepository.save(any(DeliveryPartner.class))).thenReturn(deliveryPartner);
+        when(deliveryPartnerMapper.toResponse(deliveryPartner)).thenReturn(responseDto);
+
+        // Act
+        DeliveryPartnerResponseDto result = deliveryPartnerService.assignOrder(1L, 100L);
+
+        // Assert
+        assertThat(result).isNotNull();
+
+        verify(deliveryPartnerRepository).findById(1L);
+        verify(deliveryPartnerRepository).save(any(DeliveryPartner.class));
+    }
+
+    @Test
+    @DisplayName("Should mark delivery as completed")
+    void testCompleteDeliverySuccess() {
+        // Arrange
+        when(deliveryPartnerRepository.findById(1L)).thenReturn(Optional.of(deliveryPartner));
+        when(deliveryPartnerRepository.save(any(DeliveryPartner.class))).thenReturn(deliveryPartner);
+
+        // Act
+        deliveryPartnerService.completeDelivery(1L);
+
+        // Assert
+        verify(deliveryPartnerRepository).findById(1L);
+        verify(deliveryPartnerRepository).save(any(DeliveryPartner.class));
+    }
+
+    @Test
+    @DisplayName("Should validate vehicle number format")
+    void testValidateVehicleNumber() {
+        // Arrange
+        DeliveryPartnerRequestDto invalidRequest = DeliveryPartnerRequestDto.builder()
+                .name("Partner")
+                .email("partner@delivery.com")
+                .phone("9876543210")
+                .vehicleNumber("INVALID")
+                .isAvailable(true)
+                .build();
+
+        // Act & Assert
+        assertThat(invalidRequest.getVehicleNumber()).isNotEmpty();
+    }
+}
+

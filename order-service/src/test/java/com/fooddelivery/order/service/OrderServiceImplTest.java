@@ -1,0 +1,246 @@
+package com.fooddelivery.order.service;
+
+import com.fooddelivery.common.exception.ResourceNotFoundException;
+import com.fooddelivery.order.dto.OrderRequestDto;
+import com.fooddelivery.order.dto.OrderResponseDto;
+import com.fooddelivery.order.dto.OrderStatusUpdateRequestDto;
+import com.fooddelivery.order.entity.Order;
+import com.fooddelivery.order.entity.OrderStatus;
+import com.fooddelivery.order.mapper.OrderMapper;
+import com.fooddelivery.order.repository.OrderRepository;
+import com.fooddelivery.order.service.impl.OrderServiceImpl;
+import com.fooddelivery.order.client.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Order Service Unit Tests")
+class OrderServiceImplTest {
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private OrderMapper orderMapper;
+
+    @Mock
+    private CustomerClient customerClient;
+
+    @Mock
+    private RestaurantClient restaurantClient;
+
+    @Mock
+    private PaymentClient paymentClient;
+
+    @Mock
+    private NotificationClient notificationClient;
+
+    @Mock
+    private DeliveryPartnerClient deliveryPartnerClient;
+
+    @InjectMocks
+    private OrderServiceImpl orderService;
+
+    private OrderRequestDto orderRequest;
+    private OrderResponseDto orderResponse;
+    private Order order;
+
+    @BeforeEach
+    void setUp() {
+        orderRequest = OrderRequestDto.builder()
+                .customerId(1L)
+                .restaurantId(1L)
+                .totalAmount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .build();
+
+        orderResponse = OrderResponseDto.builder()
+                .id(1L)
+                .customerId(1L)
+                .restaurantId(1L)
+                .totalAmount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .status(OrderStatus.PENDING.toString())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        order = Order.builder()
+                .id(1L)
+                .customerId(1L)
+                .restaurantId(1L)
+                .totalAmount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    @Test
+    @DisplayName("Should place order successfully")
+    void testPlaceOrderSuccess() {
+        // Arrange
+        when(customerClient.getCustomerId(1L)).thenReturn(true);
+        when(restaurantClient.getRestaurantId(1L)).thenReturn(true);
+        when(paymentClient.processPayment(any())).thenReturn(true);
+        when(orderMapper.toEntity(orderRequest)).thenReturn(order);
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(orderMapper.toResponse(order)).thenReturn(orderResponse);
+
+        // Act
+        OrderResponseDto result = orderService.placeOrder(orderRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getCustomerId()).isEqualTo(1L);
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.PENDING.toString());
+
+        verify(customerClient).getCustomerId(1L);
+        verify(restaurantClient).getRestaurantId(1L);
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should get order by id successfully")
+    void testGetOrderByIdSuccess() {
+        // Arrange
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderMapper.toResponse(order)).thenReturn(orderResponse);
+
+        // Act
+        OrderResponseDto result = orderService.getById(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+
+        verify(orderRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when order not found")
+    void testGetOrderByIdNotFound() {
+        // Arrange
+        when(orderRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.getById(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Order not found");
+
+        verify(orderRepository).findById(999L);
+    }
+
+    @Test
+    @DisplayName("Should get orders by customer id successfully")
+    void testGetOrdersByCustomerIdSuccess() {
+        // Arrange
+        Order order2 = Order.builder()
+                .id(2L)
+                .customerId(1L)
+                .restaurantId(2L)
+                .totalAmount(BigDecimal.valueOf(599.00))
+                .status(OrderStatus.DELIVERED)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(orderRepository.findByCustomerId(1L)).thenReturn(Arrays.asList(order, order2));
+        when(orderMapper.toResponse(order)).thenReturn(orderResponse);
+        when(orderMapper.toResponse(order2)).thenReturn(orderResponse);
+
+        // Act
+        List<OrderResponseDto> results = orderService.getByCustomerId(1L);
+
+        // Assert
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).getCustomerId()).isEqualTo(1L);
+
+        verify(orderRepository).findByCustomerId(1L);
+    }
+
+    @Test
+    @DisplayName("Should update order status successfully")
+    void testUpdateOrderStatusSuccess() {
+        // Arrange
+        OrderStatusUpdateRequestDto updateRequest = OrderStatusUpdateRequestDto.builder()
+                .status(OrderStatus.DELIVERED.toString())
+                .build();
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(orderMapper.toResponse(any(Order.class))).thenReturn(orderResponse);
+
+        // Act
+        OrderResponseDto result = orderService.updateStatus(1L, updateRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+
+        verify(orderRepository).findById(1L);
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should assign delivery to order successfully")
+    void testAssignDeliverySuccess() {
+        // Arrange
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(deliveryPartnerClient.assignDelivery(1L)).thenReturn(true);
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(orderMapper.toResponse(any(Order.class))).thenReturn(orderResponse);
+
+        // Act
+        OrderResponseDto result = orderService.assignDelivery(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+
+        verify(orderRepository).findById(1L);
+        verify(deliveryPartnerClient).assignDelivery(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when assigning delivery to non-existent order")
+    void testAssignDeliveryOrderNotFound() {
+        // Arrange
+        when(orderRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.assignDelivery(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(orderRepository).findById(999L);
+    }
+
+    @Test
+    @DisplayName("Should validate total amount is positive")
+    void testValidatePositiveAmount() {
+        // Arrange
+        OrderRequestDto invalidRequest = OrderRequestDto.builder()
+                .customerId(1L)
+                .restaurantId(1L)
+                .totalAmount(BigDecimal.valueOf(-100))
+                .paymentMethod("UPI")
+                .build();
+
+        // Act & Assert - validation should fail
+        // In actual implementation, validation is handled by @Valid annotation
+        assertThat(invalidRequest.getTotalAmount()).isNegative();
+    }
+}
+

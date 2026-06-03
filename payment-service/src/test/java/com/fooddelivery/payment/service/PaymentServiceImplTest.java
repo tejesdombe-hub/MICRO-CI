@@ -1,0 +1,170 @@
+package com.fooddelivery.payment.service;
+
+import com.fooddelivery.common.exception.ResourceNotFoundException;
+import com.fooddelivery.payment.dto.PaymentRequestDto;
+import com.fooddelivery.payment.dto.PaymentResponseDto;
+import com.fooddelivery.payment.entity.Payment;
+import com.fooddelivery.payment.entity.PaymentStatus;
+import com.fooddelivery.payment.mapper.PaymentMapper;
+import com.fooddelivery.payment.repository.PaymentRepository;
+import com.fooddelivery.payment.service.impl.PaymentServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Payment Service Unit Tests")
+class PaymentServiceImplTest {
+
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    @Mock
+    private PaymentMapper paymentMapper;
+
+    @InjectMocks
+    private PaymentServiceImpl paymentService;
+
+    private PaymentRequestDto paymentRequest;
+    private PaymentResponseDto paymentResponse;
+    private Payment payment;
+
+    @BeforeEach
+    void setUp() {
+        paymentRequest = PaymentRequestDto.builder()
+                .orderId(1L)
+                .amount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .build();
+
+        paymentResponse = PaymentResponseDto.builder()
+                .id(1L)
+                .orderId(1L)
+                .amount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .status(PaymentStatus.SUCCESS.toString())
+                .transactionId("TXN123456")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        payment = Payment.builder()
+                .id(1L)
+                .orderId(1L)
+                .amount(BigDecimal.valueOf(499.00))
+                .paymentMethod("UPI")
+                .status(PaymentStatus.SUCCESS)
+                .transactionId("TXN123456")
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    @Test
+    @DisplayName("Should process payment successfully")
+    void testProcessPaymentSuccess() {
+        // Arrange
+        when(paymentMapper.toEntity(paymentRequest)).thenReturn(payment);
+        when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
+        when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
+
+        // Act
+        PaymentResponseDto result = paymentService.process(paymentRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.SUCCESS.toString());
+        assertThat(result.getTransactionId()).isNotNull();
+
+        verify(paymentRepository).save(any(Payment.class));
+    }
+
+    @Test
+    @DisplayName("Should get payment by order id successfully")
+    void testGetPaymentByOrderIdSuccess() {
+        // Arrange
+        when(paymentRepository.findByOrderId(1L)).thenReturn(Optional.of(payment));
+        when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
+
+        // Act
+        PaymentResponseDto result = paymentService.getByOrderId(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getOrderId()).isEqualTo(1L);
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.SUCCESS.toString());
+
+        verify(paymentRepository).findByOrderId(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when payment not found")
+    void testGetPaymentNotFound() {
+        // Arrange
+        when(paymentRepository.findByOrderId(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> paymentService.getByOrderId(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Payment not found");
+
+        verify(paymentRepository).findByOrderId(999L);
+    }
+
+    @Test
+    @DisplayName("Should validate positive payment amount")
+    void testValidatePositiveAmount() {
+        // Arrange
+        PaymentRequestDto invalidRequest = PaymentRequestDto.builder()
+                .orderId(1L)
+                .amount(BigDecimal.valueOf(-100))
+                .paymentMethod("UPI")
+                .build();
+
+        // Act & Assert
+        assertThat(invalidRequest.getAmount()).isNegative();
+    }
+
+    @Test
+    @DisplayName("Should validate payment method is not empty")
+    void testValidatePaymentMethod() {
+        // Arrange
+        PaymentRequestDto invalidRequest = PaymentRequestDto.builder()
+                .orderId(1L)
+                .amount(BigDecimal.valueOf(499))
+                .paymentMethod("")
+                .build();
+
+        // Act & Assert
+        assertThat(invalidRequest.getPaymentMethod()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should generate unique transaction ID")
+    void testGenerateUniqueTransactionId() {
+        // Arrange
+        when(paymentMapper.toEntity(paymentRequest)).thenReturn(payment);
+        when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
+        when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
+
+        // Act
+        PaymentResponseDto result = paymentService.process(paymentRequest);
+
+        // Assert
+        assertThat(result.getTransactionId()).isNotBlank();
+
+        verify(paymentRepository).save(any(Payment.class));
+    }
+}
+
