@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Food Delivery Microservices Platform — Technical Documentation</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+      color: #1a1a2e;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 0 8px 40px;
+    }
+    .cover {
+      page-break-after: always;
+      min-height: 260mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 30px;
+      background: linear-gradient(145deg, #0f3460 0%, #16213e 45%, #1a1a2e 100%);
+      color: #fff;
+      border-radius: 4px;
+      margin: -8px -8px 0;
+    }
+    .cover .badge {
+      display: inline-block;
+      background: #e94560;
+      color: #fff;
+      font-size: 9pt;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 4px;
+      margin-bottom: 24px;
+      width: fit-content;
+    }
+    .cover h1 {
+      font-size: 32pt;
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 0 0 16px;
+      letter-spacing: -0.02em;
+    }
+    .cover .subtitle {
+      font-size: 14pt;
+      opacity: 0.92;
+      margin-bottom: 48px;
+      max-width: 90%;
+    }
+    .cover .meta {
+      font-size: 10pt;
+      opacity: 0.85;
+      border-top: 1px solid rgba(255,255,255,0.25);
+      padding-top: 20px;
+      margin-top: auto;
+    }
+    .cover .meta p { margin: 4px 0; }
+    h1.doc-title { display: none; }
+    h2 {
+      font-size: 16pt;
+      color: #0f3460;
+      border-bottom: 3px solid #e94560;
+      padding-bottom: 6px;
+      margin: 28px 0 14px;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 12pt;
+      color: #16213e;
+      margin: 20px 0 10px;
+      page-break-after: avoid;
+    }
+    h4 { font-size: 10.5pt; color: #333; margin: 14px 0 8px; }
+    p { margin: 0 0 10px; text-align: justify; }
+    ul, ol { margin: 0 0 12px; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    th {
+      background: #0f3460;
+      color: #fff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 600;
+    }
+    td {
+      border: 1px solid #d0d7de;
+      padding: 7px 10px;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f6f8fa; }
+    code, .code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 9pt;
+      background: #f0f3f6;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #c7254e;
+    }
+    pre {
+      background: #1a1a2e;
+      color: #e8e8e8;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 8.5pt;
+      line-height: 1.45;
+      overflow-x: auto;
+      margin: 10px 0 16px;
+      page-break-inside: avoid;
+    }
+    pre code { background: none; color: inherit; padding: 0; }
+    .diagram {
+      background: #f8f9fc;
+      border: 1px solid #d0d7de;
+      border-left: 4px solid #e94560;
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      white-space: pre;
+      margin: 12px 0 18px;
+      page-break-inside: avoid;
+    }
+    .toc { page-break-after: always; }
+    .toc ol { list-style: none; padding: 0; counter-reset: toc; }
+    .toc li {
+      counter-increment: toc;
+      padding: 6px 0;
+      border-bottom: 1px dotted #ccc;
+      display: flex;
+      justify-content: space-between;
+    }
+    .toc li::before { content: counter(toc) ". "; font-weight: 600; color: #0f3460; }
+    .highlight-box {
+      background: #fff8e6;
+      border: 1px solid #f0c674;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      page-break-inside: avoid;
+    }
+    .info-box {
+      background: #e8f4fc;
+      border: 1px solid #90caf9;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 12px 0;
+    }
+    .layer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin: 12px 0;
+    }
+    .layer-item {
+      background: linear-gradient(90deg, #0f3460, #16213e);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+      font-size: 9.5pt;
+    }
+    .layer-arrow { text-align: center; color: #e94560; font-size: 14pt; }
+    .page-break { page-break-before: always; }
+    .footer-note {
+      font-size: 8.5pt;
+      color: #666;
+      margin-top: 30px;
+      padding-top: 12px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media print {
+      body { padding: 0; }
+      .cover { margin: 0; border-radius: 0; min-height: 100vh; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+
+<section class="cover">
+  <span class="badge">Enterprise Microservices</span>
+  <h1>Food Delivery Platform</h1>
+  <p class="subtitle">Complete Technical Documentation — Architecture, Services, APIs, Security &amp; Learning Guide<br>
+  <em>Zomato / Swiggy-style backend with Java 17 &amp; Spring Boot 3</em></p>
+  <div class="meta">
+    <p><strong>Project:</strong> food-delivery-platform (Maven Multi-Module)</p>
+    <p><strong>Version:</strong> 1.0.0-SNAPSHOT</p>
+    <p><strong>Modules:</strong> 12 (11 microservices + common-lib)</p>
+    <p><strong>Generated:</strong> May 2026</p>
+  </div>
+</section>
+
+<section class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Executive Summary</span></li>
+    <li><span>Technology Stack</span></li>
+    <li><span>System Architecture</span></li>
+    <li><span>Microservices Overview</span></li>
+    <li><span>Layered Architecture Pattern</span></li>
+    <li><span>Project Structure</span></li>
+    <li><span>Security &amp; Authentication</span></li>
+    <li><span>Domain Entities &amp; DTOs</span></li>
+    <li><span>Inter-Service Communication (Feign)</span></li>
+    <li><span>Business Flows (End-to-End)</span></li>
+    <li><span>REST API Reference</span></li>
+    <li><span>Exception Handling</span></li>
+    <li><span>Configuration &amp; Deployment</span></li>
+    <li><span>Learning Guide</span></li>
+  </ol>
+</section>
+
+<h2>1. Executive Summary</h2>
+<p>This document describes an <strong>enterprise-grade Food Delivery Microservices Backend</strong> similar in concept to platforms like Zomato or Swiggy. The system is built as a <strong>Maven multi-module monorepo</strong> containing eleven deployable Spring Boot applications plus a shared library.</p>
+<p>Key design principles implemented in this project:</p>
+<ul>
+  <li><strong>Microservices architecture</strong> — each bounded context owns its database and deployment lifecycle.</li>
+  <li><strong>Layered architecture</strong> — consistent controller → service → repository pattern in every service.</li>
+  <li><strong>DTO-only APIs</strong> — JPA entities are never exposed over HTTP or Feign.</li>
+  <li><strong>Service discovery</strong> — Netflix Eureka registers all services dynamically.</li>
+  <li><strong>Centralized configuration</strong> — Spring Cloud Config Server with native file repository.</li>
+  <li><strong>API Gateway</strong> — single entry point with path-based routing and load balancing.</li>
+  <li><strong>JWT + RBAC</strong> — stateless authentication with role-based access in auth-service.</li>
+</ul>
+
+<h2>2. Technology Stack</h2>
+<table>
+  <tr><th>Category</th><th>Technology</th><th>Version / Notes</th></tr>
+  <tr><td>Language</td><td>Java</td><td>17 (LTS)</td></tr>
+  <tr><td>Framework</td><td>Spring Boot</td><td>3.3.5</td></tr>
+  <tr><td>Cloud</td><td>Spring Cloud</td><td>2023.0.3</td></tr>
+  <tr><td>Persistence</td><td>Spring Data JPA + MySQL</td><td>Separate DB per service</td></tr>
+  <tr><td>Security</td><td>Spring Security + JWT (jjwt)</td><td>0.12.6, BCrypt passwords</td></tr>
+  <tr><td>Inter-service</td><td>OpenFeign</td><td>DTO-based calls from order-service</td></tr>
+  <tr><td>Discovery</td><td>Netflix Eureka Server/Client</td><td>Port 8761</td></tr>
+  <tr><td>Config</td><td>Spring Cloud Config (native)</td><td>Port 8888, config-repo/</td></tr>
+  <tr><td>Gateway</td><td>Spring Cloud Gateway</td><td>Port 8080</td></tr>
+  <tr><td>Validation</td><td>Jakarta Validation</td><td>@Email, @NotBlank, @Positive, etc.</td></tr>
+  <tr><td>Documentation</td><td>SpringDoc OpenAPI</td><td>Swagger UI per service</td></tr>
+  <tr><td>Build</td><td>Maven (multi-module)</td><td>Constructor injection only</td></tr>
+  <tr><td>Utilities</td><td>Lombok</td><td>Reduces boilerplate on entities/DTOs</td></tr>
+</table>
+
+<h2>3. System Architecture</h2>
+<h3>3.1 High-Level Architecture</h3>
+<p>External clients (mobile apps, web frontends, Postman) communicate only with the <strong>API Gateway</strong>. The gateway resolves service instances via Eureka and forwards requests. Business services do not call each other directly except where orchestration is required — the <strong>Order Service</strong> coordinates customer validation, payment, notifications, and delivery assignment via OpenFeign.</p>
+
+<div class="diagram">                    ┌─────────────────────────────────────────┐
+                    │         CLIENT APPLICATIONS              │
+                    └────────────────────┬────────────────────┘
+                                         │ HTTP
+                                         ▼
+                    ┌─────────────────────────────────────────┐
+                    │      API GATEWAY  (port 8080)            │
+                    │  Routes: /api/auth, /api/customers, ...  │
+                    └────────────────────┬────────────────────┘
+                                         │ lb://service-name
+         ┌───────────────────────────────┼───────────────────────────────┐
+         ▼           ▼           ▼           ▼           ▼           ▼       ▼
+    ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐ ...
+    │ Auth   │  │Customer│  │Restau- │  │ Menu   │  │ Order  │  │Payment │
+    │ :8081  │  │ :8082  │  │rant    │  │ :8084  │  │ :8085  │  │ :8087  │
+    └────┬───┘  └────┬───┘  └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘
+         │           │          │           │           │           │
+         └───────────┴──────────┴───────────┴───────────┴───────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │   EUREKA DISCOVERY  :8761    │
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │   CONFIG SERVER    :8888     │
+                    │   (config-repo/*.yml)        │
+                    └──────────────────────────────┘
+
+    ORDER SERVICE ──Feign──► Customer, Restaurant, Payment,
+                              Notification, Delivery Partner</div>
+
+<h3>3.2 Service Ports &amp; Databases</h3>
+<table>
+  <tr><th>Service</th><th>Port</th><th>MySQL Database</th><th>Primary Responsibility</th></tr>
+  <tr><td>discovery-server</td><td>8761</td><td>—</td><td>Service registry (Eureka)</td></tr>
+  <tr><td>config-server</td><td>8888</td><td>—</td><td>Centralized YAML configuration</td></tr>
+  <tr><td>api-gateway</td><td>8080</td><td>—</td><td>Routing, load balancing, API entry</td></tr>
+  <tr><td>auth-service</td><td>8081</td><td>auth_db</td><td>Register, login, JWT, RBAC</td></tr>
+  <tr><td>customer-service</td><td>8082</td><td>customer_db</td><td>Customer profile CRUD</td></tr>
+  <tr><td>restaurant-service</td><td>8083</td><td>restaurant_db</td><td>Restaurant management</td></tr>
+  <tr><td>menu-service</td><td>8084</td><td>menu_db</td><td>Menu items &amp; availability</td></tr>
+  <tr><td>order-service</td><td>8085</td><td>order_db</td><td>Order orchestration (Feign hub)</td></tr>
+  <tr><td>delivery-partner-service</td><td>8086</td><td>delivery_db</td><td>Partner assignment &amp; status</td></tr>
+  <tr><td>payment-service</td><td>8087</td><td>payment_db</td><td>Simulated payment processing</td></tr>
+  <tr><td>notification-service</td><td>8088</td><td>notification_db</td><td>Order event notifications</td></tr>
+</table>
+
+<h2 class="page-break">4. Microservices Overview</h2>
+
+<h3>4.1 Infrastructure Services</h3>
+<h4>Discovery Server (Eureka)</h4>
+<p>All microservices register on startup. The API Gateway uses <code>lb://service-name</code> URIs to route to healthy instances. Eureka dashboard: <code>http://localhost:8761</code>.</p>
+
+<h4>Config Server</h4>
+<p>Reads configuration from <code>config-repo/</code> (native profile). Each service imports config via <code>spring.config.import=optional:configserver:http://localhost:8888</code>. Shared settings (JWT secret, Eureka URL, JPA) live in <code>application.yml</code>; service-specific ports and DB URLs in <code>{service-name}.yml</code>.</p>
+
+<h4>API Gateway</h4>
+<p>Spring Cloud Gateway routes external paths to internal services. Example: <code>/api/customers/**</code> → <code>lb://customer-service</code> with <code>StripPrefix=1</code> so <code>/api/customers/1</code> becomes <code>/customers/1</code> on the downstream service.</p>
+
+<h3>4.2 Business Services Summary</h3>
+<table>
+  <tr><th>Service</th><th>Key Classes</th><th>Notable Features</th></tr>
+  <tr><td>auth-service</td><td>AuthController, JwtService, SecurityConfig</td><td>BCrypt, JWT filter, 4 roles</td></tr>
+  <tr><td>customer-service</td><td>CustomerController, CustomerServiceImpl</td><td>Email/phone validation</td></tr>
+  <tr><td>restaurant-service</td><td>RestaurantController</td><td>Rating 0–5, owner management</td></tr>
+  <tr><td>menu-service</td><td>MenuItemController</td><td>Per-restaurant menu, availability flag</td></tr>
+  <tr><td>order-service</td><td>OrderServiceImpl, *Client (Feign)</td><td>Orchestrates full order lifecycle</td></tr>
+  <tr><td>delivery-partner-service</td><td>DeliveryPartnerController</td><td>Nearest-available assignment</td></tr>
+  <tr><td>payment-service</td><td>PaymentController</td><td>Simulated SUCCESS payment</td></tr>
+  <tr><td>notification-service</td><td>NotificationController</td><td>ORDER_PLACED, ORDER_ACCEPTED, etc.</td></tr>
+</table>
+
+<h3>4.3 Common Library (common-lib)</h3>
+<p>Shared across all business services via Maven dependency:</p>
+<ul>
+  <li><strong>Enums:</strong> Role, OrderStatus, DeliveryStatus, PaymentStatus</li>
+  <li><strong>Exceptions:</strong> ResourceNotFoundException, InvalidRequestException, UnauthorizedException</li>
+  <li><strong>GlobalExceptionHandler</strong> (@RestControllerAdvice) — uniform ErrorResponseDto</li>
+</ul>
+<p>Each service scans <code>com.fooddelivery</code> so the global handler is active.</p>
+
+<h2>5. Layered Architecture Pattern</h2>
+<p>Every business microservice follows the same package structure and layering:</p>
+<div class="layer-grid">
+  <div class="layer-item">controller — REST endpoints, ResponseEntity, validation</div>
+  <div class="layer-arrow">▼</div>
+  <div class="layer-item">service (interface) + serviceImpl — business logic</div>
+  <div class="layer-arrow">▼</div>
+  <div class="layer-item">repository — Spring Data JPA</div>
+  <div class="layer-arrow">▼</div>
+  <div class="layer-item">entity — JPA @Entity (never exposed in API)</div>
+</div>
+<p>Horizontal packages: <code>dto</code> (RequestDto / ResponseDto), <code>mapper</code>, <code>config</code>, <code>security</code>, <code>exception</code> (local if needed).</p>
+<div class="highlight-box">
+  <strong>Rule:</strong> Controllers accept and return DTOs only. Mappers convert Entity ↔ DTO inside the service layer. Feign clients use separate client DTOs in order-service (never entities).
+</div>
+
+<h2>6. Project Structure</h2>
+<pre><code>food-delivery-platform/
+├── pom.xml                    # Parent POM, dependency management
+├── common-lib/                # Shared enums, exceptions, error DTOs
+├── config-repo/               # Centralized YAML for Config Server
+│   ├── application.yml
+│   ├── auth-service.yml
+│   └── ... (per service)
+├── discovery-server/
+├── config-server/
+├── api-gateway/
+├── auth-service/
+│   └── src/main/java/com/fooddelivery/auth/
+│       ├── controller/, service/, service/impl/
+│       ├── repository/, entity/, dto/, mapper/
+│       ├── config/, security/
+├── customer-service/
+├── restaurant-service/
+├── menu-service/
+├── order-service/
+│   └── client/                # Feign interfaces + client DTOs
+├── delivery-partner-service/
+├── payment-service/
+├── notification-service/
+├── docker-compose.yml
+└── docs/                      # This documentation</code></pre>
+
+<h2 class="page-break">7. Security &amp; Authentication</h2>
+
+<h3>7.1 Roles (RBAC)</h3>
+<table>
+  <tr><th>Role</th><th>Typical Use</th></tr>
+  <tr><td>ADMIN</td><td>Platform administration</td></tr>
+  <tr><td>CUSTOMER</td><td>Place orders, view profile (referenceId = customerId)</td></tr>
+  <tr><td>RESTAURANT_OWNER</td><td>Manage restaurants and menus</td></tr>
+  <tr><td>DELIVERY_PARTNER</td><td>Delivery status updates</td></tr>
+</table>
+
+<h3>7.2 JWT Flow</h3>
+<ol>
+  <li>User registers via <code>POST /auth/register</code> with email, password, role, referenceId.</li>
+  <li>Password stored with <strong>BCryptPasswordEncoder</strong> (constructor-injected).</li>
+  <li>Login via <code>POST /auth/login</code> returns JWT with claims: role, userId, referenceId.</li>
+  <li>Subsequent requests send <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+  <li><code>JwtAuthenticationFilter</code> validates token and sets SecurityContext.</li>
+</ol>
+
+<h3>7.3 Auth Response Example</h3>
+<pre><code>{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "tokenType": "Bearer",
+  "userId": 1,
+  "email": "john@mail.com",
+  "role": "CUSTOMER",
+  "referenceId": 1
+}</code></pre>
+
+<h2>8. Domain Entities &amp; DTOs</h2>
+
+<h3>8.1 Entity Models (Database Tables)</h3>
+<table>
+  <tr><th>Entity</th><th>Service</th><th>Fields</th></tr>
+  <tr><td>User</td><td>auth</td><td>id, email, password, role, referenceId, enabled</td></tr>
+  <tr><td>Customer</td><td>customer</td><td>id, name, email, phone, address</td></tr>
+  <tr><td>Restaurant</td><td>restaurant</td><td>id, restaurantName, ownerName, address, rating</td></tr>
+  <tr><td>MenuItem</td><td>menu</td><td>id, restaurantId, itemName, description, price, availability</td></tr>
+  <tr><td>Order</td><td>order</td><td>id, customerId, restaurantId, totalAmount, orderStatus, deliveryPartnerId</td></tr>
+  <tr><td>DeliveryPartner</td><td>delivery</td><td>id, name, phone, vehicleNumber, availabilityStatus, currentOrderId, deliveryStatus</td></tr>
+  <tr><td>Payment</td><td>payment</td><td>id, orderId, amount, paymentStatus, paymentMethod</td></tr>
+  <tr><td>Notification</td><td>notification</td><td>id, userId, message, type, sentAt</td></tr>
+</table>
+
+<h3>8.2 Status Enums</h3>
+<table>
+  <tr><th>Enum</th><th>Values</th></tr>
+  <tr><td>OrderStatus</td><td>PLACED, CONFIRMED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED</td></tr>
+  <tr><td>DeliveryStatus</td><td>ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED</td></tr>
+  <tr><td>PaymentStatus</td><td>PENDING, SUCCESS, FAILED, REFUNDED</td></tr>
+</table>
+
+<h3>8.3 Validation Rules (Jakarta)</h3>
+<ul>
+  <li><code>@Email</code> on email fields</li>
+  <li><code>@Pattern(regexp="^[0-9]{10}$")</code> on phone (10 digits)</li>
+  <li><code>@NotBlank</code>, <code>@NotNull</code> on required fields</li>
+  <li><code>@Positive</code> on amounts and prices</li>
+  <li><code>@Size(min=6)</code> on passwords</li>
+</ul>
+
+<h2 class="page-break">9. Inter-Service Communication (OpenFeign)</h2>
+<p>Only <strong>order-service</strong> uses Feign to call other services. All communication uses DTOs in <code>com.fooddelivery.order.client</code>:</p>
+<table>
+  <tr><th>Feign Client</th><th>Target Service</th><th>Operations</th></tr>
+  <tr><td>CustomerClient</td><td>customer-service</td><td>GET /customers/{id}</td></tr>
+  <tr><td>RestaurantClient</td><td>restaurant-service</td><td>GET /restaurants/{id}</td></tr>
+  <tr><td>PaymentClient</td><td>payment-service</td><td>POST /payments/process</td></tr>
+  <tr><td>NotificationClient</td><td>notification-service</td><td>POST /notifications</td></tr>
+  <tr><td>DeliveryPartnerClient</td><td>delivery-partner-service</td><td>POST /delivery-partners/assign</td></tr>
+</table>
+<div class="info-box">
+  <strong>Design note:</strong> No entity-to-entity communication. If customer-service schema changes, only client DTOs in order-service may need updating — classic microservices trade-off.
+</div>
+
+<h2>10. Business Flows (End-to-End)</h2>
+
+<h3>10.1 Customer Registration &amp; Login</h3>
+<div class="diagram">1. POST /api/customers        → Create customer (id=1)
+2. POST /api/auth/register    → role=CUSTOMER, referenceId=1
+3. POST /api/auth/login       → Receive JWT token
+4. Use Authorization: Bearer &lt;token&gt; on protected calls</div>
+
+<h3>10.2 Restaurant &amp; Menu Management</h3>
+<div class="diagram">1. Register RESTAURANT_OWNER in auth-service
+2. POST /api/restaurants      → Create restaurant
+3. POST /api/menus            → Add items (restaurantId, price, availability)
+4. PUT /api/menus/{id}        → Update menu / toggle availability</div>
+
+<h3>10.3 Order Placement (Orchestration)</h3>
+<div class="diagram">POST /api/orders
+  │
+  ├─► Feign: CustomerClient.getCustomer(customerId)     [validate]
+  ├─► Feign: RestaurantClient.getRestaurant(restaurantId) [validate]
+  ├─► Save Order (status=PLACED)
+  ├─► Feign: PaymentClient.processPayment(...)
+  ├─► Update Order (status=CONFIRMED)
+  ├─► Feign: Notification "ORDER_PLACED"
+  └─► Feign: Notification "ORDER_ACCEPTED"</div>
+
+<h3>10.4 Delivery Assignment</h3>
+<div class="diagram">POST /api/orders/{id}/assign-delivery
+  │
+  ├─► Feign: DeliveryPartnerClient.assignPartner(orderId)
+  │     └─► Picks first available partner, status=ASSIGNED
+  └─► Order status → OUT_FOR_DELIVERY
+
+PATCH /api/delivery-partners/{id}/status
+  └─► ASSIGNED → PICKED_UP → OUT_FOR_DELIVERY → DELIVERED
+      (on DELIVERED: partner becomes available again)</div>
+
+<h3>10.5 Payment (Simulated)</h3>
+<p>Payment service creates record with PENDING, immediately sets SUCCESS. Suitable for demos and learning — replace with payment gateway integration in production.</p>
+
+<h3>10.6 Notifications</h3>
+<table>
+  <tr><th>Event</th><th>Type String</th><th>When</th></tr>
+  <tr><td>Order placed</td><td>ORDER_PLACED</td><td>After order save</td></tr>
+  <tr><td>Order accepted</td><td>ORDER_ACCEPTED</td><td>After payment success</td></tr>
+  <tr><td>Order delivered</td><td>ORDER_DELIVERED</td><td>When status → DELIVERED</td></tr>
+</table>
+
+<h2 class="page-break">11. REST API Reference</h2>
+<p>Base URL via Gateway: <code>http://localhost:8080/api</code>. Direct service access also works on individual ports.</p>
+
+<h3>11.1 Auth Service</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/auth/register</td><td>Register user with role</td></tr>
+  <tr><td>POST</td><td>/api/auth/login</td><td>Login, receive JWT</td></tr>
+</table>
+<pre><code>// Register
+{ "email": "john@mail.com", "password": "secret1",
+  "role": "CUSTOMER", "referenceId": 1 }</code></pre>
+
+<h3>11.2 Customer Service</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/customers</td><td>Create customer</td></tr>
+  <tr><td>GET</td><td>/api/customers/{id}</td><td>Get by ID</td></tr>
+  <tr><td>GET</td><td>/api/customers</td><td>List all</td></tr>
+  <tr><td>PUT</td><td>/api/customers/{id}</td><td>Update</td></tr>
+  <tr><td>DELETE</td><td>/api/customers/{id}</td><td>Delete</td></tr>
+</table>
+
+<h3>11.3 Restaurant Service</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/restaurants</td><td>Create restaurant</td></tr>
+  <tr><td>GET</td><td>/api/restaurants/{id}</td><td>Get by ID</td></tr>
+  <tr><td>GET</td><td>/api/restaurants</td><td>List all</td></tr>
+  <tr><td>PUT</td><td>/api/restaurants/{id}</td><td>Update</td></tr>
+  <tr><td>DELETE</td><td>/api/restaurants/{id}</td><td>Delete</td></tr>
+</table>
+
+<h3>11.4 Menu Service</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/menus</td><td>Create menu item</td></tr>
+  <tr><td>GET</td><td>/api/menus/{id}</td><td>Get item</td></tr>
+  <tr><td>GET</td><td>/api/menus/restaurant/{restaurantId}</td><td>Menu by restaurant</td></tr>
+  <tr><td>PUT</td><td>/api/menus/{id}</td><td>Update item</td></tr>
+  <tr><td>DELETE</td><td>/api/menus/{id}</td><td>Delete item</td></tr>
+</table>
+
+<h3>11.5 Order Service</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/orders</td><td>Place order (orchestrates Feign)</td></tr>
+  <tr><td>GET</td><td>/api/orders/{id}</td><td>Get order</td></tr>
+  <tr><td>GET</td><td>/api/orders/customer/{customerId}</td><td>Orders by customer</td></tr>
+  <tr><td>PATCH</td><td>/api/orders/{id}/status</td><td>Update order status</td></tr>
+  <tr><td>POST</td><td>/api/orders/{id}/assign-delivery</td><td>Assign delivery partner</td></tr>
+</table>
+<pre><code>{ "customerId": 1, "restaurantId": 1,
+  "totalAmount": 499.0, "paymentMethod": "UPI" }</code></pre>
+
+<h3>11.6 Delivery, Payment, Notification</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Service</th></tr>
+  <tr><td>POST</td><td>/api/delivery-partners</td><td>Create partner</td></tr>
+  <tr><td>POST</td><td>/api/delivery-partners/assign</td><td>Assign to order</td></tr>
+  <tr><td>PATCH</td><td>/api/delivery-partners/{id}/status</td><td>Update delivery status</td></tr>
+  <tr><td>POST</td><td>/api/payments/process</td><td>Process payment</td></tr>
+  <tr><td>GET</td><td>/api/payments/order/{orderId}</td><td>Payment by order</td></tr>
+  <tr><td>POST</td><td>/api/notifications</td><td>Send notification</td></tr>
+  <tr><td>GET</td><td>/api/notifications/user/{userId}</td><td>User notifications</td></tr>
+</table>
+
+<h2>12. Exception Handling</h2>
+<p><code>GlobalExceptionHandler</code> in common-lib maps exceptions to <code>ErrorResponseDto</code>:</p>
+<table>
+  <tr><th>Exception</th><th>HTTP Status</th></tr>
+  <tr><td>ResourceNotFoundException</td><td>404 Not Found</td></tr>
+  <tr><td>InvalidRequestException</td><td>400 Bad Request</td></tr>
+  <tr><td>UnauthorizedException</td><td>401 Unauthorized</td></tr>
+  <tr><td>MethodArgumentNotValidException</td><td>400 + validationErrors map</td></tr>
+  <tr><td>Exception (generic)</td><td>500 Internal Server Error</td></tr>
+</table>
+<pre><code>{
+  "timestamp": "2026-05-25T10:00:00",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Customer not found: 99",
+  "path": "/customers/99"
+}</code></pre>
+
+<h2 class="page-break">13. Configuration &amp; Deployment</h2>
+
+<h3>13.1 Startup Order</h3>
+<ol>
+  <li>MySQL: <code>docker-compose up -d</code></li>
+  <li>discovery-server (8761)</li>
+  <li>config-server (8888)</li>
+  <li>Business services (any order, after config is up)</li>
+  <li>api-gateway (8080)</li>
+</ol>
+
+<h3>13.2 Build</h3>
+<pre><code>./mvnw clean install -DskipTests</code></pre>
+
+<h3>13.3 Run Single Service</h3>
+<pre><code>./mvnw -pl order-service spring-boot:run</code></pre>
+
+<h3>13.4 Swagger UI</h3>
+<p>Each business service: <code>http://localhost:{port}/swagger-ui.html</code></p>
+
+<h3>13.5 Key Configuration Files</h3>
+<ul>
+  <li><code>config-repo/application.yml</code> — JWT, Eureka, JPA defaults</li>
+  <li><code>config-repo/api-gateway.yml</code> — Route definitions</li>
+  <li><code>config-repo/{service}.yml</code> — Port and database URL</li>
+</ul>
+
+<h2>14. Learning Guide</h2>
+<h3>Recommended Study Path</h3>
+<ol>
+  <li><strong>common-lib</strong> — Understand shared exceptions and enums first.</li>
+  <li><strong>customer-service</strong> — Simplest CRUD; study layered packages.</li>
+  <li><strong>auth-service</strong> — JWT, SecurityConfig, filter chain.</li>
+  <li><strong>discovery-server + config-server + api-gateway</strong> — Infrastructure wiring.</li>
+  <li><strong>order-service</strong> — Feign clients and orchestration in OrderServiceImpl.</li>
+  <li><strong>delivery-partner-service</strong> — State machine for delivery status.</li>
+</ol>
+
+<h3>Concepts Demonstrated</h3>
+<ul>
+  <li>Database-per-service pattern</li>
+  <li>API Gateway as BFF / edge router</li>
+  <li>Synchronous orchestration vs eventual saga (extension topic)</li>
+  <li>DTO boundary between services</li>
+  <li>Centralized configuration without redeploying all JARs</li>
+  <li>Constructor injection and testability</li>
+</ul>
+
+<h3>Production Enhancements (Future Work)</h3>
+<ul>
+  <li>Propagate JWT through Feign (RequestInterceptor)</li>
+  <li>Resilience4j circuit breakers on Feign calls</li>
+  <li>Kafka for async notifications</li>
+  <li>Distributed tracing (Micrometer + Zipkin)</li>
+  <li>Kubernetes manifests and CI/CD pipelines</li>
+</ul>
+
+<p class="footer-note">
+  Food Delivery Microservices Platform — Technical Documentation v1.0<br>
+  Generated from source at /home/tejes.dombe/Downloads/MICRO
+</p>
+
+</body>
+</html>

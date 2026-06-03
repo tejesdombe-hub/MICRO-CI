@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+docs/
+*.md
+HELP.md
+.mvn/wrapper/maven-wrapper.jar

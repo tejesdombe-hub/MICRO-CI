@@ -1,0 +1,35 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    username: root
+    password: root
+
+jwt:
+  secret: foodDeliveryEnterpriseSecretKeyForJwtSigningMinimum256BitsRequired2024
+  expiration-ms: 86400000
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: method
+
+logging:
+  level:
+    com.fooddelivery: INFO
+    org.springframework.cloud: INFO

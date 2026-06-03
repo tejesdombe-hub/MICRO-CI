@@ -1,0 +1,154 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+          filters:
+            - StripPrefix=1
+        - id: restaurant-service
+          uri: lb://restaurant-service
+          predicates:
+            - Path=/api/restaurants/**
+          filters:
+            - StripPrefix=1
+        - id: menu-service
+          uri: lb://menu-service
+          predicates:
+            - Path=/api/menus/**
+          filters:
+            - StripPrefix=1
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+        - id: delivery-partner-service
+          uri: lb://delivery-partner-service
+          predicates:
+            - Path=/api/delivery-partners/**
+          filters:
+            - StripPrefix=1
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=1
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+        - id: openapi-auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/v3/api-docs/auth-service
+          filters:
+            - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+        - id: openapi-customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/v3/api-docs/customer-service
+          filters:
+            - RewritePath=/v3/api-docs/customer-service, /v3/api-docs
+        - id: openapi-restaurant-service
+          uri: lb://restaurant-service
+          predicates:
+            - Path=/v3/api-docs/restaurant-service
+          filters:
+            - RewritePath=/v3/api-docs/restaurant-service, /v3/api-docs
+        - id: openapi-menu-service
+          uri: lb://menu-service
+          predicates:
+            - Path=/v3/api-docs/menu-service
+          filters:
+            - RewritePath=/v3/api-docs/menu-service, /v3/api-docs
+        - id: openapi-order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/v3/api-docs/order-service
+          filters:
+            - RewritePath=/v3/api-docs/order-service, /v3/api-docs
+        - id: openapi-delivery-partner-service
+          uri: lb://delivery-partner-service
+          predicates:
+            - Path=/v3/api-docs/delivery-partner-service
+          filters:
+            - RewritePath=/v3/api-docs/delivery-partner-service, /v3/api-docs
+        - id: openapi-payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/v3/api-docs/payment-service
+          filters:
+            - RewritePath=/v3/api-docs/payment-service, /v3/api-docs
+        - id: openapi-notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/v3/api-docs/notification-service
+          filters:
+            - RewritePath=/v3/api-docs/notification-service, /v3/api-docs
+        - id: swagger-ui-index-redirect
+          uri: no://op
+          predicates:
+            - Path=/swagger-ui/index.html, /swagger-ui/
+          filters:
+            - RedirectTo=302, /webjars/swagger-ui/index.html
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    urls:
+      - name: "1. Auth Service"
+        url: /v3/api-docs/auth-service
+      - name: "2. Customer Service"
+        url: /v3/api-docs/customer-service
+      - name: "3. Restaurant Service"
+        url: /v3/api-docs/restaurant-service
+      - name: "4. Menu Service"
+        url: /v3/api-docs/menu-service
+      - name: "5. Order Service (Feign)"
+        url: /v3/api-docs/order-service
+      - name: "6. Delivery Partner"
+        url: /v3/api-docs/delivery-partner-service
+      - name: "7. Payment Service"
+        url: /v3/api-docs/payment-service
+      - name: "8. Notification Service"
+        url: /v3/api-docs/notification-service
+    urls-primary-name: "1. Auth Service"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

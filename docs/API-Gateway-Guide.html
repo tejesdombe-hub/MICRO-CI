@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway in Microservices Architecture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 30px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 25px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .toc {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .diagram {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 0.85em;
+        }
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        @media print {
+            body {
+                font-size: 12pt;
+            }
+            h1, h2, h3, h4 {
+                page-break-after: avoid;
+            }
+            pre, table {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>API Gateway in Microservices Architecture</h1>
+    <h2>A Comprehensive Guide with Spring Cloud Gateway</h2>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#1-problems-with-direct-client-access">1. Problems with Direct Client Access</a></li>
+            <li><a href="#2-role-of-an-api-gateway">2. Role of an API Gateway</a></li>
+            <li><a href="#3-benefits-of-api-gateway">3. Benefits of API Gateway</a></li>
+            <li><a href="#4-request-routing-and-path-rewriting">4. Request Routing and Path Rewriting</a></li>
+            <li><a href="#5-gateway-filters">5. Gateway Filters</a></li>
+            <li><a href="#6-load-balancing-concept">6. Load Balancing Concept</a></li>
+            <li><a href="#7-simplifying-client-side-communication">7. Simplifying Client-Side Communication</a></li>
+            <li><a href="#8-when-an-api-gateway-is-essential">8. When an API Gateway is Essential</a></li>
+            <li><a href="#9-real-world-architecture-example">9. Real-world Architecture Example</a></li>
+        </ul>
+    </div>
+
+    <h2 id="1-problems-with-direct-client-access">1. Problems with Direct Client Access</h2>
+    
+    <h3>The Challenge</h3>
+    <p>In a microservices architecture without an API Gateway, clients (web browsers, mobile apps, third-party applications) must directly communicate with multiple microservices. Each service exposes its own API on different ports and endpoints.</p>
+
+    <h3>Architecture Without API Gateway</h3>
+    <div class="diagram">
+┌─────────────┐
+│   Client    │
+│ (Web/Mobile)│
+└──────┬──────┘
+       │
+       ├──────────┐
+       │          │
+       ▼          ▼          ▼          ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│   Auth   │ │ Customer │ │  Order   │ │ Payment  │
+│ :8081    │ │ :8082    │ │ :8083    │ │ :8084    │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+       │          │          │          │
+       └──────────┴──────────┴──────────┘
+                    │
+                    ▼
+              ┌──────────┐
+              │ Database │
+              └──────────┘
+    </div>
+
+    <h3>Problems Identified</h3>
+
+    <p><strong>1. Multiple Service Endpoints</strong></p>
+    <p>Clients need to know and manage multiple URLs:</p>
+    <ul>
+        <li>Authentication: <code>http://localhost:8081/api/auth</code></li>
+        <li>Customers: <code>http://localhost:8082/api/customers</code></li>
+        <li>Orders: <code>http://localhost:8083/api/orders</code></li>
+        <li>Payments: <code>http://localhost:8084/api/payments</code></li>
+        <li>Restaurants: <code>http://localhost:8085/api/restaurants</code></li>
+        <li>Menus: <code>http://localhost:8086/api/menus</code></li>
+        <li>Delivery Partners: <code>http://localhost:8087/api/delivery-partners</code></li>
+        <li>Notifications: <code>http://localhost:8088/api/notifications</code></li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Complex client configuration</li>
+        <li>Difficult to maintain across environments</li>
+        <li>CORS issues with multiple origins</li>
+        <li>SSL certificate management for each service</li>
+    </ul>
+
+    <p><strong>2. Cross-Cutting Concerns Duplication</strong></p>
+    <p>Each microservice must implement:</p>
+    <ul>
+        <li>Authentication and authorization</li>
+        <li>Request validation</li>
+        <li>Logging and monitoring</li>
+        <li>Rate limiting</li>
+        <li>CORS handling</li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Code duplication across services</li>
+        <li>Inconsistent implementation</li>
+        <li>Maintenance overhead</li>
+        <li>Security risks (inconsistent security)</li>
+    </ul>
+
+    <p><strong>3. Client Complexity</strong></p>
+    <p>Clients must handle:</p>
+    <ul>
+        <li>Service discovery (finding service URLs)</li>
+        <li>Load balancing (distributing requests)</li>
+        <li>Retry logic (handling failures)</li>
+        <li>Circuit breaking (preventing cascading failures)</li>
+        <li>API versioning (managing different service versions)</li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Complex client code</li>
+        <li>Business logic mixed with infrastructure concerns</li>
+        <li>Difficult to test and maintain</li>
+        <li>Poor developer experience</li>
+    </ul>
+
+    <p><strong>4. Security Concerns</strong></p>
+    <p>Direct access exposes:</p>
+    <ul>
+        <li>Internal service structure to clients</li>
+        <li>Multiple attack surfaces</li>
+        <li>Difficult to implement consistent security policies</li>
+        <li>No centralized authentication/authorization</li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Increased attack surface</li>
+        <li>Inconsistent security policies</li>
+        <li>Difficult to audit and monitor</li>
+        <li>Compliance challenges</li>
+    </ul>
+
+    <p><strong>5. Performance Issues</strong></p>
+    <p>Without optimization:</p>
+    <ul>
+        <li>Multiple network calls from client</li>
+        <li>No request/response caching</li>
+        <li>No request/response compression</li>
+        <li>No request aggregation</li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Slower response times</li>
+        <li>Higher bandwidth usage</li>
+        <li>Poor user experience</li>
+        <li>Increased infrastructure costs</li>
+    </ul>
+
+    <p><strong>6. Operational Challenges</strong></p>
+    <p>Operations team must manage:</p>
+    <ul>
+        <li>Multiple service endpoints</li>
+        <li>Different authentication mechanisms</li>
+        <li>Separate monitoring for each service</li>
+        <li>Complex deployment strategies</li>
+    </ul>
+
+    <p><strong>Impact:</strong></p>
+    <ul>
+        <li>Increased operational complexity</li>
+        <li>Difficult troubleshooting</li>
+        <li>Longer incident response times</li>
+        <li>Higher operational costs</li>
+    </ul>
+
+    <h3>Real-world Example</h3>
+    <p><strong>Without API Gateway - Client Code:</strong></p>
+    <pre><code>// Client must know all service URLs
+const AUTH_SERVICE = 'http://localhost:8081';
+const CUSTOMER_SERVICE = 'http://localhost:8082';
+const ORDER_SERVICE = 'http://localhost:8083';
+const PAYMENT_SERVICE = 'http://localhost:8084';
+
+// Client must implement load balancing
+async function getCustomer(id) {
+    const instances = await discoverInstances('customer-service');
+    const instance = selectInstance(instances);
+    return fetch(`${instance}/api/customers/${id}`);
+}
+
+// Client must implement retry logic
+async function createOrder(order) {
+    let retries = 3;
+    while (retries > 0) {
+        try {
+            const response = await fetch(`${ORDER_SERVICE}/api/orders`, {
+                method: 'POST',
+                body: JSON.stringify(order)
+            });
+            return response.json();
+        } catch (error) {
+            retries--;
+            if (retries === 0) throw error;
+        }
+    }
+}</code></pre>
+
+    <h2 id="2-role-of-an-api-gateway">2. Role of an API Gateway</h2>
+    
+    <h3>Definition</h3>
+    <p>An API Gateway is a server that acts as an API front-end, receiving API requests, enforcing throttling and security policies, passing requests to the appropriate service, and returning the appropriate response. It's the single entry point for all client requests in a microservices architecture.</p>
+
+    <h3>Core Responsibilities</h3>
+
+    <p><strong>1. Request Routing</strong></p>
+    <ul>
+        <li>Route requests to appropriate microservices based on URL patterns</li>
+        <li>Support multiple routing strategies (path-based, header-based, method-based)</li>
+        <li>Handle service discovery integration</li>
+    </ul>
+
+    <p><strong>2. Protocol Translation</strong></p>
+    <ul>
+        <li>Convert between different protocols (HTTP, WebSocket, gRPC)</li>
+        <li>Support multiple client types (web, mobile, IoT)</li>
+        <li>Handle API versioning</li>
+    </ul>
+
+    <p><strong>3. Request/Response Transformation</strong></p>
+    <ul>
+        <li>Modify requests before forwarding to services</li>
+        <li>Transform responses before returning to clients</li>
+        <li>Aggregate responses from multiple services</li>
+    </ul>
+
+    <p><strong>4. Security Enforcement</strong></p>
+    <ul>
+        <li>Authentication and authorization</li>
+        <li>JWT token validation</li>
+        <li>OAuth/OIDC integration</li>
+        <li>API key management</li>
+    </ul>
+
+    <p><strong>5. Cross-Cutting Concerns</strong></p>
+    <ul>
+        <li>Logging and monitoring</li>
+        <li>Rate limiting</li>
+        <li>Caching</li>
+        <li>CORS handling</li>
+        <li>Request validation</li>
+    </ul>
+
+    <p><strong>6. Load Balancing</strong></p>
+    <ul>
+        <li>Distribute requests across service instances</li>
+        <li>Implement various load balancing strategies</li>
+        <li>Handle failover and retries</li>
+    </ul>
+
+    <h3>Architecture with API Gateway</h3>
+    <div class="diagram">
+┌─────────────┐
+│   Client    │
+│ (Web/Mobile)│
+└──────┬──────┘
+       │
+       │ Single Entry Point
+       ▼
+┌─────────────────────────────────┐
+│         API Gateway             │
+│         (Port 8080)             │
+│  - Routing                      │
+│  - Security                     │
+│  - Load Balancing               │
+│  - Monitoring                   │
+└──────────────┬──────────────────┘
+               │
+               │ Routes to Services
+               ▼
+┌─────────────────────────────────┐
+│         Service Discovery       │
+│         (Eureka)                │
+└──────────────┬──────────────────┘
+               │
+       ┌───────┼───────┬───────┬───────┐
+       │       │       │       │       │
+       ▼       ▼       ▼       ▼       ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│   Auth   │ │ Customer │ │  Order   │ │ Payment  │
+│ :8081    │ │ :8082    │ │ :8083    │ │ :8084    │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+    </div>
+
+    <h3>Key Characteristics</h3>
+
+    <p><strong>1. Single Entry Point</strong></p>
+    <ul>
+        <li>All client requests go through the gateway</li>
+        <li>Simplifies client configuration</li>
+        <li>Centralized access control</li>
+    </ul>
+
+    <p><strong>2. Decoupling</strong></p>
+    <ul>
+        <li>Clients don't need to know about internal service structure</li>
+        <li>Services can evolve independently</li>
+        <li>Reduces client complexity</li>
+    </ul>
+
+    <p><strong>3. Abstraction Layer</strong></p>
+    <ul>
+        <li>Hides service implementation details</li>
+        <li>Provides unified API interface</li>
+        <li>Enables backend changes without client impact</li>
+    </ul>
+
+    <p><strong>4. Centralized Management</strong></p>
+    <ul>
+        <li>Single place for cross-cutting concerns</li>
+        <li>Consistent policy enforcement</li>
+        <li>Simplified monitoring and debugging</li>
+    </ul>
+
+    <h3>Types of API Gateways</h3>
+
+    <p><strong>1. General-Purpose API Gateways</strong></p>
+    <ul>
+        <li>Kong</li>
+        <li>NGINX</li>
+        <li>HAProxy</li>
+        <li>Traefik</li>
+    </ul>
+
+    <p><strong>2. Cloud-Native API Gateways</strong></p>
+    <ul>
+        <li>AWS API Gateway</li>
+        <li>Azure API Management</li>
+        <li>Google Cloud Endpoints</li>
+    </ul>
+
+    <p><strong>3. Framework-Specific Gateways</strong></p>
+    <ul>
+        <li>Spring Cloud Gateway (Java/Spring)</li>
+        <li>Express Gateway (Node.js)</li>
+        <li>Zuul (Netflix - deprecated)</li>
+    </ul>
+
+    <p><strong>4. Service Mesh Gateways</strong></p>
+    <ul>
+        <li>Istio Gateway</li>
+        <li>Linkerd</li>
+        <li>Consul Connect</li>
+    </ul>
+
+    <h2 id="3-benefits-of-api-gateway">3. Benefits of API Gateway</h2>
+    
+    <h3>1. Single Entry Point</h3>
+    <p><strong>Description:</strong></p>
+    <p>All client requests are routed through a single endpoint, simplifying client configuration and reducing complexity.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Simplified Client Configuration:</strong> Clients only need to know one URL</li>
+        <li><strong>Unified API Surface:</strong> Consistent API interface across all services</li>
+        <li><strong>Easier Testing:</strong> Single endpoint to test integration</li>
+        <li><strong>Better Developer Experience:</strong> Clear, documented entry point</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>Before: Multiple URLs
+- http://localhost:8081/api/auth
+- http://localhost:8082/api/customers
+- http://localhost:8083/api/orders
+
+After: Single URL
+- http://localhost:8080/api/auth
+- http://localhost:8080/api/customers
+- http://localhost:8080/api/orders</code></pre>
+
+    <p><strong>Our Implementation:</strong></p>
+    <pre><code>server:
+  port: 8080  # Single entry point for all services
+
+spring:
+  application:
+    name: api-gateway</code></pre>
+
+    <h3>2. Centralized Routing</h3>
+    <p><strong>Description:</strong></p>
+    <p>All routing logic is centralized in the gateway, making it easy to manage and modify routing rules.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Easy Configuration:</strong> Routing rules in one place</li>
+        <li><strong>Dynamic Updates:</strong> Routes can be updated without code changes</li>
+        <li><strong>Version Management:</strong> Support for API versioning</li>
+        <li><strong>A/B Testing:</strong> Route traffic to different service versions</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1</code></pre>
+
+    <p><strong>Routing Strategies:</strong></p>
+    <ul>
+        <li><strong>Path-based:</strong> Route based on URL path</li>
+        <li><strong>Header-based:</strong> Route based on request headers</li>
+        <li><strong>Method-based:</strong> Route based on HTTP method</li>
+        <li><strong>Query parameter-based:</strong> Route based on query parameters</li>
+    </ul>
+
+    <h3>3. Security Enforcement</h3>
+    <p><strong>Description:</strong></p>
+    <p>Centralized security policies ensure consistent authentication and authorization across all services.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Consistent Security:</strong> Same security rules for all services</li>
+        <li><strong>Reduced Attack Surface:</strong> Only gateway needs to be exposed publicly</li>
+        <li><strong>Centralized Authentication:</strong> Single authentication mechanism</li>
+        <li><strong>Easier Compliance:</strong> Easier to audit and enforce security policies</li>
+    </ul>
+
+    <p><strong>Security Features:</strong></p>
+    <ul>
+        <li><strong>Authentication:</strong> JWT validation, OAuth/OIDC</li>
+        <li><strong>Authorization:</strong> Role-based access control</li>
+        <li><strong>Rate Limiting:</strong> Prevent abuse and DDoS attacks</li>
+        <li><strong>IP Whitelisting/Blacklisting:</strong> Control access by IP</li>
+        <li><strong>Request Validation:</strong> Validate requests before forwarding</li>
+    </ul>
+
+    <p><strong>Example Configuration:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-Request-Id, ${requestId}</code></pre>
+
+    <h3>4. Request Filtering</h3>
+    <p><strong>Description:</strong></p>
+    <p>Gateway can filter and modify requests before they reach backend services.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Request Validation:</strong> Validate requests before forwarding</li>
+        <li><strong>Header Manipulation:</strong> Add, modify, or remove headers</li>
+        <li><strong>Request Transformation:</strong> Modify request body or parameters</li>
+        <li><strong>Logging:</strong> Log all requests for monitoring and debugging</li>
+    </ul>
+
+    <p><strong>Filter Types:</strong></p>
+    <ul>
+        <li><strong>Pre-filters:</strong> Execute before routing</li>
+        <li><strong>Post-filters:</strong> Execute after routing</li>
+        <li><strong>Error filters:</strong> Execute on errors</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-Gateway-Request, true
+            - AddResponseHeader=X-Gateway-Response, true</code></pre>
+
+    <h3>5. Rate Limiting (Concept Overview)</h3>
+    <p><strong>Description:</strong></p>
+    <p>Rate limiting controls the number of requests a client can make within a specific time period.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Prevent Abuse:</strong> Protect services from malicious attacks</li>
+        <li><strong>Fair Usage:</strong> Ensure fair resource allocation</li>
+        <li><strong>Cost Control:</strong> Manage infrastructure costs</li>
+        <li><strong>SLA Enforcement:</strong> Ensure service level agreements</li>
+    </ul>
+
+    <p><strong>Rate Limiting Strategies:</strong></p>
+    <ul>
+        <li><strong>Fixed Window:</strong> Limit requests per fixed time window</li>
+        <li><strong>Sliding Window:</strong> More accurate rate limiting</li>
+        <li><strong>Token Bucket:</strong> Allow bursts of requests</li>
+        <li><strong>Leaky Bucket:</strong> Smooth out request rate</li>
+    </ul>
+
+    <p><strong>Implementation Approaches:</strong></p>
+    <ul>
+        <li><strong>Gateway-level:</strong> Apply at gateway for all services</li>
+        <li><strong>Service-level:</strong> Apply per service</li>
+        <li><strong>User-level:</strong> Apply per user/IP</li>
+        <li><strong>Endpoint-level:</strong> Apply per API endpoint</li>
+    </ul>
+
+    <p><strong>Example (Spring Cloud Gateway with Redis):</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20</code></pre>
+
+    <h3>6. Load Balancing</h3>
+    <p><strong>Description:</strong></p>
+    <p>Gateway distributes requests across multiple service instances to ensure optimal resource utilization.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>High Availability:</strong> Distribute load for better performance</li>
+        <li><strong>Fault Tolerance:</strong> Route away from failed instances</li>
+        <li><strong>Scalability:</strong> Handle increased traffic</li>
+        <li><strong>Resource Optimization:</strong> Better resource utilization</li>
+    </ul>
+
+    <p><strong>Load Balancing Strategies:</strong></p>
+    <ul>
+        <li><strong>Round Robin:</strong> Distribute requests sequentially</li>
+        <li><strong>Random:</strong> Randomly select instances</li>
+        <li><strong>Weighted:</strong> Distribute based on instance capacity</li>
+        <li><strong>Least Connections:</strong> Route to instance with fewest connections</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service  # Load balanced
+          predicates:
+            - Path=/api/orders/**</code></pre>
+
+    <h3>7. Monitoring and Logging</h3>
+    <p><strong>Description:</strong></p>
+    <p>Centralized logging and monitoring provide visibility into all API traffic.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Troubleshooting:</strong> Easy to debug issues</li>
+        <li><strong>Performance Monitoring:</strong> Track API performance</li>
+        <li><strong>Analytics:</strong> Understand usage patterns</li>
+        <li><strong>Audit Trail:</strong> Track all API calls</li>
+    </ul>
+
+    <p><strong>Monitoring Capabilities:</strong></p>
+    <ul>
+        <li>Request/response logging</li>
+        <li>Performance metrics (latency, throughput)</li>
+        <li>Error tracking</li>
+        <li>Custom metrics</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway</code></pre>
+
+    <h3>8. API Versioning</h3>
+    <p><strong>Description:</strong></p>
+    <p>Gateway can manage multiple API versions, allowing smooth transitions.</p>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li><strong>Backward Compatibility:</strong> Support old and new versions</li>
+        <li><strong>Smooth Migration:</strong> Gradual rollout of new versions</li>
+        <li><strong>Client Choice:</strong> Clients can choose their version</li>
+        <li><strong>Deprecation Management:</strong> Manage API lifecycle</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service-v1
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - StripPrefix=2
+        - id: order-service-v2
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v2/orders/**
+          filters:
+            - StripPrefix=2</code></pre>
+
+    <h2 id="4-request-routing-and-path-rewriting">4. Request Routing and Path Rewriting</h2>
+    
+    <h3>Request Routing</h3>
+    <p><strong>Definition:</strong></p>
+    <p>Request routing is the process of determining which backend service should handle a client request based on predefined rules.</p>
+
+    <h3>Routing Predicates</h3>
+    <p>Spring Cloud Gateway uses predicates to match incoming requests:</p>
+
+    <p><strong>1. Path Predicate</strong></p>
+    <pre><code>predicates:
+  - Path=/api/orders/**</code></pre>
+    <p>Matches requests with path starting with <code>/api/orders/</code></p>
+
+    <p><strong>2. Method Predicate</strong></p>
+    <pre><code>predicates:
+  - Method=GET,POST</code></pre>
+    <p>Matches GET and POST requests</p>
+
+    <p><strong>3. Header Predicate</strong></p>
+    <pre><code>predicates:
+  - Header=X-Request-Id, \d+</code></pre>
+    <p>Matches requests with specific header pattern</p>
+
+    <p><strong>4. Query Predicate</strong></p>
+    <pre><code>predicates:
+  - Query=category</code></pre>
+    <p>Matches requests with query parameter</p>
+
+    <p><strong>5. Host Predicate</strong></p>
+    <pre><code>predicates:
+  - Host=api.example.com</code></pre>
+    <p>Matches requests from specific host</p>
+
+    <p><strong>6. Cookie Predicate</strong></p>
+    <pre><code>predicates:
+  - Cookie=session, \w+</code></pre>
+    <p>Matches requests with specific cookie</p>
+
+    <p><strong>7. Time Predicate</strong></p>
+    <pre><code>predicates:
+  - Between=2024-01-01T00:00:00+00:00,2024-12-31T23:59:59+00:00</code></pre>
+    <p>Matches requests within time range</p>
+
+    <h3>Path Rewriting</h3>
+    <p><strong>Definition:</strong></p>
+    <p>Path rewriting modifies the request path before forwarding it to the backend service.</p>
+
+    <h3>Common Path Rewriting Filters</h3>
+
+    <p><strong>1. StripPrefix Filter</strong></p>
+    <p>Removes specified number of path segments before forwarding.</p>
+    <pre><code>filters:
+  - StripPrefix=1</code></pre>
+
+    <p><strong>Example:</strong></p>
+    <ul>
+        <li>Incoming: <code>http://gateway:8080/api/orders/123</code></li>
+        <li>After StripPrefix=1: <code>http://order-service:8085/orders/123</code></li>
+    </ul>
+
+    <p><strong>2. RewritePath Filter</strong></p>
+    <p>Rewrites path using regex pattern.</p>
+    <pre><code>filters:
+  - RewritePath=/api/(?<segment>.*), /${segment}</code></pre>
+
+    <p><strong>Example:</strong></p>
+    <ul>
+        <li>Incoming: <code>http://gateway:8080/api/orders/123</code></li>
+        <li>After RewritePath: <code>http://order-service:8085/orders/123</code></li>
+    </ul>
+
+    <p><strong>3. SetPath Filter</strong></p>
+    <p>Sets the path to a specific value.</p>
+    <pre><code>filters:
+  - SetPath=/api/orders/{id}</code></pre>
+
+    <h3>Our Implementation</h3>
+
+    <p><strong>Service Routes:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+          filters:
+            - StripPrefix=1
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1</code></pre>
+
+    <p><strong>OpenAPI Aggregation Routes:</strong></p>
+    <pre><code>- id: openapi-auth-service
+  uri: lb://auth-service
+  predicates:
+    - Path=/v3/api-docs/auth-service
+  filters:
+    - RewritePath=/v3/api-docs/auth-service, /v3/api-docs</code></pre>
+
+    <p><strong>Request Flow:</strong></p>
+    <pre>Client Request:
+GET http://localhost:8080/api/orders/123
+
+Gateway Processing:
+1. Matches route: Path=/api/orders/**
+2. Applies filter: StripPrefix=1
+3. Resolves service: lb://order-service
+4. Forwards to: http://order-service-instance/orders/123</pre>
+
+    <h3>Advanced Routing Examples</h3>
+
+    <p><strong>1. Header-based Routing</strong></p>
+    <pre><code>- id: order-service-v1
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Header=X-API-Version, 1.0
+  filters:
+    - StripPrefix=1
+
+- id: order-service-v2
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Header=X-API-Version, 2.0
+  filters:
+    - StripPrefix=1</code></pre>
+
+    <p><strong>2. Method-based Routing</strong></p>
+    <pre><code>- id: order-service-get
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Method=GET
+  filters:
+    - StripPrefix=1
+
+- id: order-service-post
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Method=POST
+  filters:
+    - StripPrefix=1</code></pre>
+
+    <p><strong>3. Weight-based Routing (A/B Testing)</strong></p>
+    <pre><code>- id: order-service-v1
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Weight=group1, 80
+  filters:
+    - StripPrefix=1
+
+- id: order-service-v2
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders/**
+    - Weight=group1, 20
+  filters:
+    - StripPrefix=1</code></pre>
+
+    <h2 id="5-gateway-filters">5. Gateway Filters</h2>
+    
+    <h3>Filter Types</h3>
+    <p>Spring Cloud Gateway supports two types of filters:</p>
+
+    <p><strong>1. Gateway Filters</strong></p>
+    <ul>
+        <li>Applied to individual routes</li>
+        <li>Modify request/response for specific routes</li>
+        <li>Configured per route</li>
+    </ul>
+
+    <p><strong>2. Global Filters</strong></p>
+    <ul>
+        <li>Applied to all routes</li>
+        <li>Modify request/response globally</li>
+        <li>Applied to every request</li>
+    </ul>
+
+    <h3>Built-in Gateway Filters</h3>
+
+    <p><strong>1. AddRequestHeader</strong></p>
+    <p>Adds a header to the request.</p>
+    <pre><code>filters:
+  - AddRequestHeader=X-Request-Id, ${requestId}</code></pre>
+
+    <p><strong>2. AddResponseHeader</strong></p>
+    <p>Adds a header to the response.</p>
+    <pre><code>filters:
+  - AddResponseHeader=X-Response-Time, ${responseTime}</code></pre>
+
+    <p><strong>3. RemoveRequestHeader</strong></p>
+    <p>Removes a header from the request.</p>
+    <pre><code>filters:
+  - RemoveRequestHeader=Cookie</code></pre>
+
+    <p><strong>4. SetRequestHeader</strong></p>
+    <p>Sets a header value (overwrites if exists).</p>
+    <pre><code>filters:
+  - SetRequestHeader=X-Forwarded-For, ${clientIp}</code></pre>
+
+    <p><strong>5. SetResponseHeader</strong></p>
+    <p>Sets a response header value.</p>
+    <pre><code>filters:
+  - SetResponseHeader=X-Custom-Header, CustomValue</code></pre>
+
+    <p><strong>6. AddRequestParameter</strong></p>
+    <p>Adds a parameter to the request.</p>
+    <pre><code>filters:
+  - AddRequestParameter=version, v1</code></pre>
+
+    <p><strong>7. RemoveRequestParameter</strong></p>
+    <p>Removes a parameter from the request.</p>
+    <pre><code>filters:
+  - RemoveRequestParameter=debug</code></pre>
+
+    <p><strong>8. RedirectTo</strong></p>
+    <p>Redirects to another URL.</p>
+    <pre><code>filters:
+  - RedirectTo=302, /new-location</code></pre>
+
+    <p><strong>9. StripPrefix</strong></p>
+    <p>Removes path segments.</p>
+    <pre><code>filters:
+  - StripPrefix=1</code></pre>
+
+    <p><strong>10. RewritePath</strong></p>
+    <p>Rewrites path using regex.</p>
+    <pre><code>filters:
+  - RewritePath=/api/(?<segment>.*), /${segment}</code></pre>
+
+    <p><strong>11. RequestRateLimiter</strong></p>
+    <p>Applies rate limiting.</p>
+    <pre><code>filters:
+  - name: RequestRateLimiter
+    args:
+      redis-rate-limiter.replenishRate: 10
+      redis-rate-limiter.burstCapacity: 20</code></pre>
+
+    <p><strong>12. CircuitBreaker</strong></p>
+    <p>Implements circuit breaker pattern.</p>
+    <pre><code>filters:
+  - name: CircuitBreaker
+    args:
+      name: orderServiceCircuitBreaker
+      fallbackUri: forward:/fallback/orders</code></pre>
+
+    <h3>Custom Filters</h3>
+    <p>You can create custom filters for specific requirements:</p>
+
+    <p><strong>Example: Logging Filter</strong></p>
+    <pre><code>@Component
+public class LoggingFilter implements GlobalFilter {
+    
+    private static final Logger log = LoggerFactory.getLogger(LoggingFilter.class);
+    
+    @Override
+    public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        log.info("Request: {} {}", request.getMethod(), request.getURI());
+        
+        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            ServerHttpResponse response = exchange.getResponse();
+            log.info("Response: {}", response.getStatusCode());
+        }));
+    }
+}</code></pre>
+
+    <p><strong>Example: Authentication Filter</strong></p>
+    <pre><code>@Component
+public class AuthenticationFilter implements GlobalFilter {
+    
+    @Override
+    public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String token = exchange.getRequest().getHeaders().getFirst("Authorization");
+        
+        if (token == null || !isValidToken(token)) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+        
+        return chain.filter(exchange);
+    }
+    
+    private boolean isValidToken(String token) {
+        // Token validation logic
+        return true;
+    }
+}</code></pre>
+
+    <h3>Filter Order</h3>
+    <p>Filters are executed in a specific order:</p>
+    <ol>
+        <li>Pre-filters (before routing)</li>
+        <li>Routing</li>
+        <li>Post-filters (after routing)</li>
+    </ol>
+
+    <p>You can control filter order using <code>@Order</code> annotation:</p>
+    <pre><code>@Component
+@Order(1)
+public class FirstFilter implements GlobalFilter {
+    // ...
+}
+
+@Component
+@Order(2)
+public class SecondFilter implements GlobalFilter {
+    // ...
+}</code></pre>
+
+    <h3>Our Implementation</h3>
+
+    <p><strong>Current Filters in Use:</strong></p>
+    <pre><code>filters:
+  - StripPrefix=1  # Remove /api prefix
+  - RewritePath=/v3/api-docs/auth-service, /v3/api-docs  # For OpenAPI</code></pre>
+
+    <p><strong>Additional Filters We Could Add:</strong></p>
+    <pre><code>filters:
+  - AddRequestHeader=X-Gateway-Request, true
+  - AddResponseHeader=X-Gateway-Response, true
+  - AddRequestHeader=X-Request-Id, ${requestId}
+  - AddResponseHeader=X-Response-Time, ${responseTime}</code></pre>
+
+    <h3>Logging Filter Example</h3>
+
+    <p><strong>Purpose:</strong> Log all requests and responses for monitoring and debugging.</p>
+
+    <p><strong>Implementation:</strong></p>
+    <pre><code>@Component
+@Slf4j
+public class RequestLoggingFilter implements GlobalFilter {
+    
+    @Override
+    public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        long startTime = System.currentTimeMillis();
+        String requestId = UUID.randomUUID().toString();
+        
+        // Add request ID to exchange
+        exchange.getAttributes().put("requestId", requestId);
+        
+        // Log request
+        log.info("Request [{}]: {} {} from {}", 
+            requestId, 
+            exchange.getRequest().getMethod(), 
+            exchange.getRequest().getURI(),
+            exchange.getRequest().getRemoteAddress());
+        
+        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Response [{}]: Status {} in {}ms", 
+                requestId, 
+                exchange.getResponse().getStatusCode(),
+                duration);
+        }));
+    }
+}</code></pre>
+
+    <h3>Authentication Filter Example</h3>
+
+    <p><strong>Purpose:</strong> Validate JWT tokens before forwarding requests.</p>
+
+    <p><strong>Implementation:</strong></p>
+    <pre><code>@Component
+@Slf4j
+public class JwtAuthenticationFilter implements GlobalFilter {
+    
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+    
+    @Override
+    public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String path = exchange.getRequest().getPath().value();
+        
+        // Skip authentication for public endpoints
+        if (isPublicEndpoint(path)) {
+            return chain.filter(exchange);
+        }
+        
+        String token = extractToken(exchange.getRequest());
+        
+        if (token == null) {
+            return unauthorized(exchange);
+        }
+        
+        if (!validateToken(token)) {
+            return unauthorized(exchange);
+        }
+        
+        // Add user info to headers
+        exchange.getRequest().mutate()
+            .header("X-User-Id", extractUserId(token))
+            .build();
+        
+        return chain.filter(exchange);
+    }
+    
+    private boolean isPublicEndpoint(String path) {
+        return path.startsWith("/api/auth") || 
+               path.startsWith("/swagger-ui") ||
+               path.startsWith("/v3/api-docs");
+    }
+    
+    private String extractToken(ServerHttpRequest request) {
+        String authHeader = request.getHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+    
+    private boolean validateToken(String token) {
+        // JWT validation logic
+        return true;
+    }
+    
+    private String extractUserId(String token) {
+        // Extract user ID from token
+        return "123";
+    }
+    
+    private Mono&lt;Void&gt; unauthorized(ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        exchange.getResponse().getHeaders().add("Content-Type", "application/json");
+        String body = "{\"error\": \"Unauthorized\"}";
+        DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(body.getBytes());
+        return exchange.getResponse().writeWith(Mono.just(buffer));
+    }
+}</code></pre>
+
+    <h2 id="6-load-balancing-concept">6. Load Balancing Concept</h2>
+    
+    <h3>What is Load Balancing?</h3>
+    <p>Load balancing is the process of distributing incoming network traffic across multiple servers or service instances to ensure no single server bears too much demand.</p>
+
+    <h3>Why Load Balancing is Important</h3>
+
+    <p><strong>1. High Availability</strong></p>
+    <ul>
+        <li>Distributes traffic to prevent overload</li>
+        <li>Ensures services remain available under high load</li>
+        <li>Prevents single point of failure</li>
+    </ul>
+
+    <p><strong>2. Scalability</strong></p>
+    <ul>
+        <li>Handles increased traffic by adding more instances</li>
+        <li>Scales horizontally without client changes</li>
+        <li>Optimizes resource utilization</li>
+    </ul>
+
+    <p><strong>3. Performance</strong></p>
+    <ul>
+        <li>Reduces response times</li>
+        <li>Improves user experience</li>
+        <li>Maximizes throughput</li>
+    </ul>
+
+    <p><strong>4. Fault Tolerance</strong></p>
+    <ul>
+        <li>Routes traffic away from failed instances</li>
+        <li>Automatic failover</li>
+        <li>Graceful degradation</li>
+    </ul>
+
+    <h3>Load Balancing Strategies</h3>
+
+    <p><strong>1. Round Robin</strong></p>
+    <p>Distributes requests sequentially across instances.</p>
+    <pre>Request 1 → Instance A
+Request 2 → Instance B
+Request 3 → Instance C
+Request 4 → Instance A</pre>
+
+    <p><strong>Pros:</strong></p>
+    <ul>
+        <li>Simple to implement</li>
+        <li>Fair distribution</li>
+        <li>No state required</li>
+    </ul>
+
+    <p><strong>Cons:</strong></p>
+    <ul>
+        <li>Doesn't consider instance load</li>
+        <li>Doesn't consider instance capacity</li>
+    </ul>
+
+    <p><strong>2. Random</strong></p>
+    <p>Randomly selects an instance for each request.</p>
+    <pre>Request 1 → Instance B (random)
+Request 2 → Instance A (random)
+Request 3 → Instance C (random)</pre>
+
+    <p><strong>Pros:</strong></p>
+    <ul>
+        <li>Simple implementation</li>
+        <li>Good statistical distribution</li>
+        <li>No state required</li>
+    </ul>
+
+    <p><strong>Cons:</strong></p>
+    <ul>
+        <li>Doesn't consider instance load</li>
+        <li>Potential uneven distribution</li>
+    </ul>
+
+    <p><strong>3. Weighted Round Robin</strong></p>
+    <p>Distributes requests based on instance weights.</p>
+    <pre>Instance A (weight 3): 3 requests
+Instance B (weight 2): 2 requests
+Instance C (weight 1): 1 request</pre>
+
+    <p><strong>Pros:</strong></p>
+    <ul>
+        <li>Considers instance capacity</li>
+        <li>Flexible distribution</li>
+        <li>Good for heterogeneous instances</li>
+    </ul>
+
+    <p><strong>Cons:</strong></p>
+    <ul>
+        <li>Requires weight configuration</li>
+        <li>More complex than simple round robin</li>
+    </ul>
+
+    <p><strong>4. Least Connections</strong></p>
+    <p>Routes to instance with fewest active connections.</p>
+    <pre>Instance A: 5 connections
+Instance B: 3 connections ← Selected
+Instance C: 7 connections</pre>
+
+    <p><strong>Pros:</strong></p>
+    <ul>
+        <li>Considers current load</li>
+        <li>Better for long-running requests</li>
+        <li>Dynamic adaptation</li>
+    </ul>
+
+    <p><strong>Cons:</strong></p>
+    <ul>
+        <li>Requires connection tracking</li>
+        <li>More complex implementation</li>
+    </ul>
+
+    <p><strong>5. IP Hash</strong></p>
+    <p>Routes based on client IP hash.</p>
+    <pre>Client IP 192.168.1.1 → Instance A
+Client IP 192.168.1.2 → Instance B
+Client IP 192.168.1.1 → Instance A (consistent)</pre>
+
+    <p><strong>Pros:</strong></p>
+    <ul>
+        <li>Session persistence</li>
+        <li>Consistent routing</li>
+        <li>Good for stateful services</li>
+    </ul>
+
+    <p><strong>Cons:</strong></p>
+    <ul>
+        <li>Uneven distribution with few clients</li>
+        <li>Not ideal for load balancing</li>
+    </ul>
+
+    <h3>Load Balancing in API Gateway</h3>
+
+    <p><strong>Integration with Service Discovery:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service  # Load balanced
+          predicates:
+            - Path=/api/orders/**</code></pre>
+
+    <p><strong>How it Works:</strong></p>
+    <ol>
+        <li>Gateway receives request</li>
+        <li>Resolves service name via Eureka</li>
+        <li>Gets list of available instances</li>
+        <li>Applies load balancing strategy</li>
+        <li>Routes to selected instance</li>
+        <li>Retries on failure</li>
+    </ol>
+
+    <h3>Spring Cloud Load Balancer</h3>
+    <p>Spring Cloud Gateway uses Spring Cloud Load Balancer (replaces Ribbon):</p>
+
+    <p><strong>Configuration:</strong></p>
+    <pre><code>spring:
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false  # Ribbon is deprecated</code></pre>
+
+    <p><strong>Default Strategy:</strong></p>
+    <ul>
+        <li>Round Robin (default)</li>
+        <li>Can be customized</li>
+    </ul>
+
+    <h3>Health Checks</h3>
+    <p>Load balancer should consider instance health:</p>
+    <pre><code>eureka:
+  instance:
+    health-check-url-path: /actuator/health</code></pre>
+
+    <p><strong>Health-aware Load Balancing:</strong></p>
+    <ul>
+        <li>Only routes to healthy instances</li>
+        <li>Automatically excludes unhealthy instances</li>
+        <li>Re-includes instances when they recover</li>
+    </ul>
+
+    <h3>Circuit Breaking</h3>
+    <p>Circuit breaker prevents cascading failures:</p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderServiceCircuitBreaker
+                fallbackUri: forward:/fallback/orders</code></pre>
+
+    <p><strong>How it Works:</strong></p>
+    <ol>
+        <li>Monitors failure rate</li>
+        <li>Opens circuit when threshold exceeded</li>
+        <li>Routes to fallback</li>
+        <li>Attempts to close circuit after timeout</li>
+    </ol>
+
+    <h3>Retry Logic</h3>
+    <p>Automatic retry on failure:</p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+                backoff:
+                  firstBackoff: 10ms
+                  maxBackoff: 50ms
+                  factor: 2</code></pre>
+
+    <h3>Our Implementation</h3>
+
+    <p><strong>Load Balancing Configuration:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: order-service
+          uri: lb://order-service  # Load balanced
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1</code></pre>
+
+    <p><strong>Benefits in Our Architecture:</strong></p>
+    <ul>
+        <li>Automatic load balancing across service instances</li>
+        <li>Integration with Eureka for service discovery</li>
+        <li>No manual load balancer configuration</li>
+        <li>Scales automatically with instances</li>
+    </ul>
+
+    <h2 id="7-simplifying-client-side-communication">7. Simplifying Client-Side Communication</h2>
+    
+    <h3>Complexity Without Gateway</h3>
+
+    <p><strong>Client Must Handle:</strong></p>
+    <ul>
+        <li>Multiple service URLs</li>
+        <li>Service discovery</li>
+        <li>Load balancing</li>
+        <li>Retry logic</li>
+        <li>Circuit breaking</li>
+        <li>Authentication</li>
+        <li>Error handling</li>
+        <li>API versioning</li>
+    </ul>
+
+    <p><strong>Example Client Code (Complex):</strong></p>
+    <pre><code>class OrderClient {
+    constructor() {
+        this.services = {
+            auth: 'http://localhost:8081',
+            customer: 'http://localhost:8082',
+            order: 'http://localhost:8083',
+            payment: 'http://localhost:8084'
+        };
+    }
+    
+    async createOrder(orderData) {
+        // 1. Authenticate
+        const token = await this.authenticate();
+        
+        // 2. Get customer
+        const customer = await this.getCustomer(orderData.customerId, token);
+        
+        // 3. Create order
+        const order = await this.createOrderInternal(orderData, token);
+        
+        // 4. Process payment
+        const payment = await this.processPayment(order, token);
+        
+        return { order, payment };
+    }
+    
+    async authenticate() {
+        // Implement authentication logic
+        // Handle retries, errors, etc.
+    }
+    
+    async getCustomer(id, token) {
+        // Implement service discovery
+        // Implement load balancing
+        // Implement retry logic
+        // Handle errors
+    }
+    
+    async createOrderInternal(order, token) {
+        // Implement service discovery
+        // Implement load balancing
+        // Implement retry logic
+        // Handle errors
+    }
+    
+    async processPayment(order, token) {
+        // Implement service discovery
+        // Implement load balancing
+        // Implement retry logic
+        // Handle errors
+    }
+}</code></pre>
+
+    <h3>Simplicity With Gateway</h3>
+
+    <p><strong>Client Only Needs:</strong></p>
+    <ul>
+        <li>Single gateway URL</li>
+        <li>Standard HTTP client</li>
+        <li>Basic error handling</li>
+    </ul>
+
+    <p><strong>Example Client Code (Simple):</strong></p>
+    <pre><code>class OrderClient {
+    constructor() {
+        this.gatewayUrl = 'http://localhost:8080';
+        this.token = localStorage.getItem('token');
+    }
+    
+    async createOrder(orderData) {
+        const response = await fetch(`${this.gatewayUrl}/api/orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create order');
+        }
+        
+        return response.json();
+    }
+}</code></pre>
+
+    <h3>Benefits of Simplified Communication</h3>
+
+    <p><strong>1. Reduced Client Complexity</strong></p>
+    <ul>
+        <li>Less code to maintain</li>
+        <li>Easier to understand</li>
+        <li>Fewer bugs</li>
+        <li>Better developer experience</li>
+    </ul>
+
+    <p><strong>2. Consistent API Interface</strong></p>
+    <ul>
+        <li>Unified API surface</li>
+        <li>Consistent error handling</li>
+        <li>Standardized responses</li>
+        <li>Predictable behavior</li>
+    </ul>
+
+    <p><strong>3. Easier Testing</strong></p>
+    <ul>
+        <li>Single endpoint to test</li>
+        <li>Mock gateway for testing</li>
+        <li>Simplified integration tests</li>
+        <li>Better test coverage</li>
+    </ul>
+
+    <p><strong>4. Better Performance</strong></p>
+    <ul>
+        <li>Fewer network calls</li>
+        <li>Gateway-level caching</li>
+        <li>Request/response optimization</li>
+        <li>Reduced latency</li>
+    </ul>
+
+    <p><strong>5. Improved Security</strong></p>
+    <ul>
+        <li>Centralized authentication</li>
+        <li>Consistent security policies</li>
+        <li>Reduced attack surface</li>
+        <li>Easier compliance</li>
+    </ul>
+
+    <p><strong>6. Easier Maintenance</strong></p>
+    <ul>
+        <li>Single place to update</li>
+        <li>Version management</li>
+        <li>Deprecation handling</li>
+        <li>Backward compatibility</li>
+    </ul>
+
+    <h3>API Aggregation</h3>
+    <p>Gateway can aggregate multiple service calls into one:</p>
+
+    <p><strong>Without Aggregation (Multiple Calls):</strong></p>
+    <pre><code>// Client makes multiple calls
+const customer = await fetch('/api/customers/123');
+const orders = await fetch('/api/orders?customerId=123');
+const payments = await fetch('/api/payments?customerId=123');</code></pre>
+
+    <p><strong>With Aggregation (Single Call):</strong></p>
+    <pre><code>// Gateway aggregates calls
+const dashboard = await fetch('/api/dashboard/123');
+// Returns: { customer, orders, payments }</code></pre>
+
+    <p><strong>Implementation:</strong></p>
+    <pre><code>@Component
+public class DashboardAggregator {
+    
+    @Autowired
+    private CustomerClient customerClient;
+    
+    @Autowired
+    private OrderClient orderClient;
+    
+    @Autowired
+    private PaymentClient paymentClient;
+    
+    public Mono&lt;DashboardDTO&gt; getDashboard(Long customerId) {
+        return Mono.zip(
+            customerClient.getCustomer(customerId),
+            orderClient.getOrdersByCustomer(customerId),
+            paymentClient.getPaymentsByCustomer(customerId)
+        ).map(tuple -> new DashboardDTO(
+            tuple.getT1(),
+            tuple.getT2(),
+            tuple.getT3()
+        ));
+    }
+}</code></pre>
+
+    <h3>Request Composition</h3>
+    <p>Gateway can compose requests from multiple services:</p>
+
+    <p><strong>Example: Order with Customer Details</strong></p>
+    <pre><code>- id: order-with-customer
+  uri: lb://order-service
+  predicates:
+    - Path=/api/orders-with-customer/**
+  filters:
+    - StripPrefix=1
+    - name: RequestComposition
+      args:
+        services: customer-service</code></pre>
+
+    <h3>Response Transformation</h3>
+    <p>Gateway can transform responses:</p>
+
+    <p><strong>Example: Format Conversion</strong></p>
+    <pre><code>filters:
+  - name: ResponseTransformation
+    args:
+      from: json
+      to: xml</code></pre>
+
+    <h3>Our Implementation</h3>
+
+    <p><strong>Simplified Client Communication:</strong></p>
+    <pre><code># All services accessible through single gateway
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**</code></pre>
+
+    <p><strong>Client Benefits:</strong></p>
+    <ul>
+        <li>Single URL: <code>http://localhost:8080</code></li>
+        <li>Consistent paths: <code>/api/{service}/**</code></li>
+        <li>No service discovery needed</li>
+        <li>No load balancing logic</li>
+        <li>Simplified error handling</li>
+    </ul>
+
+    <h2 id="8-when-an-api-gateway-is-essential">8. When an API Gateway is Essential</h2>
+    
+    <h3>Scenarios Requiring API Gateway</h3>
+
+    <p><strong>1. Multiple Client Types</strong></p>
+    <ul>
+        <li>Web applications</li>
+        <li>Mobile applications (iOS, Android)</li>
+        <li>IoT devices</li>
+        <li>Third-party integrations</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Different clients need different API formats</li>
+        <li>Centralized place to handle client-specific logic</li>
+        <li>Consistent API across all clients</li>
+    </ul>
+
+    <p><strong>2. Complex Microservices Architecture</strong></p>
+    <ul>
+        <li>10+ microservices</li>
+        <li>Inter-service communication</li>
+        <li>Service dependencies</li>
+        <li>Complex routing rules</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Manages complexity</li>
+        <li>Provides abstraction layer</li>
+        <li>Simplifies client communication</li>
+        <li>Enables independent service evolution</li>
+    </ul>
+
+    <p><strong>3. Security Requirements</strong></p>
+    <ul>
+        <li>Authentication and authorization</li>
+        <li>Rate limiting</li>
+        <li>IP whitelisting/blacklisting</li>
+        <li>Request validation</li>
+        <li>Compliance requirements (GDPR, HIPAA)</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Centralized security enforcement</li>
+        <li>Consistent security policies</li>
+        <li>Easier auditing</li>
+        <li>Compliance management</li>
+    </ul>
+
+    <p><strong>4. High Traffic Volumes</strong></p>
+    <ul>
+        <li>Thousands of requests per second</li>
+        <li>Peak traffic handling</li>
+        <li>DDoS protection</li>
+        <li>Rate limiting</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Load balancing</li>
+        <li>Rate limiting</li>
+        <li>Caching</li>
+        <li>Request optimization</li>
+    </ul>
+
+    <p><strong>5. API Versioning</strong></p>
+    <ul>
+        <li>Multiple API versions</li>
+        <li>Backward compatibility</li>
+        <li>Gradual migration</li>
+        <li>Deprecation management</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Version routing</li>
+        <li>Compatibility management</li>
+        <li>Smooth transitions</li>
+        <li>Client control</li>
+    </ul>
+
+    <p><strong>6. Cross-Cutting Concerns</strong></p>
+    <ul>
+        <li>Logging and monitoring</li>
+        <li>Request/response transformation</li>
+        <li>API aggregation</li>
+        <li>Request composition</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Centralized implementation</li>
+        <li>Consistent behavior</li>
+        <li>Reduced duplication</li>
+        <li>Easier maintenance</li>
+    </ul>
+
+    <p><strong>7. External API Exposure</strong></p>
+    <ul>
+        <li>Public APIs</li>
+        <li>Partner APIs</li>
+        <li>Third-party integrations</li>
+        <li>API monetization</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>API key management</li>
+        <li>Usage tracking</li>
+        <li>Billing integration</li>
+        <li>Access control</li>
+    </ul>
+
+    <p><strong>8. Performance Optimization</strong></p>
+    <ul>
+        <li>Caching</li>
+        <li>Compression</li>
+        <li>Request/response optimization</li>
+        <li>CDN integration</li>
+    </ul>
+
+    <p><strong>Why Essential:</strong></p>
+    <ul>
+        <li>Improved performance</li>
+        <li>Reduced latency</li>
+        <li>Better user experience</li>
+        <li>Cost optimization</li>
+    </ul>
+
+    <h3>When API Gateway Might Not Be Essential</h3>
+
+    <p><strong>1. Simple Monolithic Application</strong></p>
+    <ul>
+        <li>Single service</li>
+        <li>Few endpoints</li>
+        <li>Simple routing</li>
+        <li>Low traffic</li>
+    </ul>
+
+    <p><strong>Alternative:</strong></p>
+    <ul>
+        <li>Load balancer (NGINX, HAProxy)</li>
+        <li>Direct service access</li>
+    </ul>
+
+    <p><strong>2. Internal Microservices with Few Clients</strong></p>
+    <ul>
+        <li>2-3 microservices</li>
+        <li>Internal use only</li>
+        <li>Simple routing</li>
+        <li>Low security requirements</li>
+    </ul>
+
+    <p><strong>Alternative:</strong></p>
+    <ul>
+        <li>Service mesh (Istio, Linkerd)</li>
+        <li>Direct service-to-service communication</li>
+    </ul>
+
+    <p><strong>3. Development/Testing Environment</strong></p>
+    <ul>
+        <li>Local development</li>
+        <li>Testing scenarios</li>
+        <li>Proof of concept</li>
+    </ul>
+
+    <p><strong>Alternative:</strong></p>
+    <ul>
+        <li>Direct service access</li>
+        <li>Mock services</li>
+        <li>Service stubs</li>
+    </ul>
+
+    <h3>Decision Framework</h3>
+
+    <p><strong>Use API Gateway if:</strong></p>
+    <ul>
+        <li>✅ Multiple microservices (>5)</li>
+        <li>✅ Multiple client types</li>
+        <li>✅ Security requirements</li>
+        <li>✅ High traffic volume</li>
+        <li>✅ API versioning needed</li>
+        <li>✅ Cross-cutting concerns</li>
+        <li>✅ External API exposure</li>
+        <li>✅ Performance optimization needed</li>
+    </ul>
+
+    <p><strong>Consider Alternatives if:</strong></p>
+    <ul>
+        <li>❌ Single monolithic application</li>
+        <li>❌ Few microservices (<3)</li>
+        <li>❌ Internal use only</li>
+        <li>❌ Low traffic volume</li>
+        <li>❌ Simple routing</li>
+        <li>❌ Development/testing only</li>
+    </ul>
+
+    <h3>Our Use Case</h3>
+
+    <p><strong>Food Delivery Platform:</strong></p>
+    <ul>
+        <li>8 microservices</li>
+        <li>Web and mobile clients</li>
+        <li>Security requirements (JWT auth)</li>
+        <li>High traffic potential</li>
+        <li>API versioning needed</li>
+        <li>Cross-cutting concerns (logging, monitoring)</li>
+        <li>Performance optimization needed</li>
+    </ul>
+
+    <p><strong>Conclusion:</strong></p>
+    <div class="success">API Gateway is <strong>essential</strong> for our Food Delivery Platform.</div>
+
+    <h2 id="9-real-world-architecture-example">9. Real-world Architecture Example</h2>
+    
+    <h3>Our Food Delivery Platform Architecture</h3>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│                    Clients                               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│  │   Web    │  │  Mobile  │  │  Third   │              │
+│  │   App    │  │   App    │  │  Party   │              │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘              │
+└───────┼────────────┼────────────┼──────────────────────┘
+        │            │            │
+        └────────────┴────────────┘
+                     │
+                     │ Single Entry Point
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              API Gateway (Port 8080)                    │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Spring Cloud Gateway                            │   │
+│  │  - Routing (Path-based)                          │   │
+│  │  - Load Balancing (lb://)                        │   │
+│  │  - Path Rewriting (StripPrefix)                   │   │
+│  │  - OpenAPI Aggregation                            │   │
+│  │  - Service Discovery (Eureka)                     │   │
+│  └─────────────────────────────────────────────────┘   │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         │ Discovers Services
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│            Discovery Server (Port 8761)                │
+│            Netflix Eureka                               │
+└─────────────────────────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   Auth       │ │  Customer    │ │  Restaurant  │
+│  Service     │ │  Service     │ │  Service     │
+│  :8081       │ │  :8082       │ │  :8083       │
+└──────────────┘ └──────────────┘ └──────────────┘
+         │               │               │
+         └───────────────┼───────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   Menu       │ │   Order      │ │  Payment     │
+│  Service     │ │  Service     │ │  Service     │
+│  :8084       │ │  :8085       │ │  :8086       │
+└──────────────┘ └──────────────┘ └──────────────┘
+                         │
+         ┌───────────────┴───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│  Delivery    │ │ Notification │ │  Config      │
+│  Partner     │ │  Service     │ │  Server      │
+│  Service     │ │  :8088       │ │  :8888       │
+│  :8087       │ │              │ │              │
+└──────────────┘ └──────────────┘ └──────────────┘
+    </div>
+
+    <h3>Gateway Configuration Details</h3>
+
+    <p><strong>Application Configuration:</strong></p>
+    <pre><code>server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true</code></pre>
+
+    <p><strong>Service Routes:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        # Core Services
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+          filters:
+            - StripPrefix=1
+        
+        - id: restaurant-service
+          uri: lb://restaurant-service
+          predicates:
+            - Path=/api/restaurants/**
+          filters:
+            - StripPrefix=1
+        
+        - id: menu-service
+          uri: lb://menu-service
+          predicates:
+            - Path=/api/menus/**
+          filters:
+            - StripPrefix=1
+        
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+        
+        - id: delivery-partner-service
+          uri: lb://delivery-partner-service
+          predicates:
+            - Path=/api/delivery-partners/**
+          filters:
+            - StripPrefix=1
+        
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=1
+        
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1</code></pre>
+
+    <p><strong>OpenAPI Aggregation Routes:</strong></p>
+    <pre><code># OpenAPI Documentation Routes
+- id: openapi-auth-service
+  uri: lb://auth-service
+  predicates:
+    - Path=/v3/api-docs/auth-service
+  filters:
+    - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+
+- id: openapi-customer-service
+  uri: lb://customer-service
+  predicates:
+    - Path=/v3/api-docs/customer-service
+  filters:
+    - RewritePath=/v3/api-docs/customer-service, /v3/api-docs
+
+- id: openapi-order-service
+  uri: lb://order-service
+  predicates:
+    - Path=/v3/api-docs/order-service
+  filters:
+    - RewritePath=/v3/api-docs/order-service, /v3/api-docs</code></pre>
+
+    <p><strong>Swagger UI Configuration:</strong></p>
+    <pre><code>springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    urls:
+      - name: "1. Auth Service"
+        url: /v3/api-docs/auth-service
+      - name: "2. Customer Service"
+        url: /v3/api-docs/customer-service
+      - name: "3. Restaurant Service"
+        url: /v3/api-docs/restaurant-service
+      - name: "4. Menu Service"
+        url: /v3/api-docs/menu-service
+      - name: "5. Order Service (Feign)"
+        url: /v3/api-docs/order-service
+      - name: "6. Delivery Partner"
+        url: /v3/api-docs/delivery-partner-service
+      - name: "7. Payment Service"
+        url: /v3/api-docs/payment-service
+      - name: "8. Notification Service"
+        url: /v3/api-docs/notification-service</code></pre>
+
+    <h3>Request Flow Example</h3>
+
+    <p><strong>Scenario: Customer places an order</strong></p>
+
+    <p><strong>1. Client Request:</strong></p>
+    <pre><code>POST http://localhost:8080/api/orders
+Headers:
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+  Content-Type: application/json
+
+Body:
+{
+  "customerId": 123,
+  "restaurantId": 456,
+  "items": [
+    {"menuItemId": 789, "quantity": 2}
+  ],
+  "deliveryAddress": "123 Main St"
+}</code></pre>
+
+    <p><strong>2. Gateway Processing:</strong></p>
+    <pre><code>1. Receive request on port 8080
+2. Match route: Path=/api/orders/**
+3. Apply filter: StripPrefix=1
+4. Resolve service: lb://order-service via Eureka
+5. Load balance: Select order-service instance
+6. Forward request: POST http://order-service:8085/orders</code></pre>
+
+    <p><strong>3. Order Service Processing:</strong></p>
+    <pre><code>1. Receive request
+2. Validate JWT token
+3. Get customer details (via Feign client to customer-service)
+4. Get menu items (via Feign client to menu-service)
+5. Calculate total
+6. Create order
+7. Return response</code></pre>
+
+    <p><strong>4. Gateway Response:</strong></p>
+    <pre><code>HTTP/1.1 201 Created
+Headers:
+  Content-Type: application/json
+  X-Gateway-Response: true
+
+Body:
+{
+  "orderId": 1001,
+  "status": "PENDING",
+  "total": 25.99,
+  "createdAt": "2024-01-15T10:30:00Z"
+}</code></pre>
+
+    <h3>Benefits in Our Architecture</h3>
+
+    <p><strong>1. Single Entry Point</strong></p>
+    <ul>
+        <li>All clients access through <code>localhost:8080</code></li>
+        <li>Consistent API structure: <code>/api/{service}/**</code></li>
+        <li>Simplified client configuration</li>
+    </ul>
+
+    <p><strong>2. Centralized Routing</strong></p>
+    <ul>
+        <li>All routing rules in one place</li>
+        <li>Easy to add/remove services</li>
+        <li>Dynamic route updates via Config Server</li>
+    </ul>
+
+    <p><strong>3. Service Discovery Integration</strong></p>
+    <ul>
+        <li>Automatic service resolution via Eureka</li>
+        <li>No hardcoded service URLs</li>
+        <li>Dynamic instance discovery</li>
+    </ul>
+
+    <p><strong>4. Load Balancing</strong></p>
+    <ul>
+        <li>Automatic load balancing with <code>lb://</code></li>
+        <li>Spring Cloud Load Balancer integration</li>
+        <li>Fault tolerance and failover</li>
+    </ul>
+
+    <p><strong>5. Path Rewriting</strong></p>
+    <ul>
+        <li><code>StripPrefix=1</code> removes <code>/api</code> prefix</li>
+        <li>Clean service URLs</li>
+        <li>Consistent path structure</li>
+    </ul>
+
+    <p><strong>6. OpenAPI Aggregation</strong></p>
+    <ul>
+        <li>Single Swagger UI for all services</li>
+        <li>Centralized API documentation</li>
+        <li>Easy API testing</li>
+    </ul>
+
+    <p><strong>7. Monitoring</strong></p>
+    <ul>
+        <li>Actuator endpoints for health and metrics</li>
+        <li>Gateway-specific metrics</li>
+        <li>Centralized logging</li>
+    </ul>
+
+    <h3>Docker Deployment</h3>
+
+    <p><strong>Docker Compose Configuration:</strong></p>
+    <pre><code>version: '3.8'
+services:
+  api-gateway:
+    image: food-delivery/api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-server
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888</code></pre>
+
+    <p><strong>Docker Configuration:</strong></p>
+    <pre><code># config-repo/application-docker.yml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/</code></pre>
+
+    <h3>Scaling the Gateway</h3>
+
+    <p><strong>Scale Gateway Instances:</strong></p>
+    <pre><code>docker-compose up --scale api-gateway=3</code></pre>
+
+    <p><strong>Benefits:</strong></p>
+    <ul>
+        <li>High availability</li>
+        <li>Load balancing at gateway level</li>
+        <li>Fault tolerance</li>
+        <li>Handle increased traffic</li>
+    </ul>
+
+    <h3>Monitoring and Observability</h3>
+
+    <p><strong>Actuator Endpoints:</strong></p>
+    <ul>
+        <li>Health: <code>http://localhost:8080/actuator/health</code></li>
+        <li>Info: <code>http://localhost:8080/actuator/info</code></li>
+        <li>Gateway Routes: <code>http://localhost:8080/actuator/gateway/routes</code></li>
+    </ul>
+
+    <p><strong>Metrics:</strong></p>
+    <ul>
+        <li>Request count</li>
+        <li>Response time</li>
+        <li>Error rate</li>
+        <li>Service-specific metrics</li>
+    </ul>
+
+    <h3>Security Enhancements (Future)</h3>
+
+    <p><strong>Potential Additions:</strong></p>
+    <pre><code># JWT Authentication Filter
+filters:
+  - name: JwtAuthentication
+    args:
+      secret: ${JWT_SECRET}
+
+# Rate Limiting
+filters:
+  - name: RequestRateLimiter
+    args:
+      redis-rate-limiter.replenishRate: 100
+      redis-rate-limiter.burstCapacity: 200
+
+# Circuit Breaker
+filters:
+  - name: CircuitBreaker
+    args:
+      name: orderServiceCircuitBreaker
+      fallbackUri: forward:/fallback/orders
+
+# Request Logging
+filters:
+  - name: RequestLogging
+    args:
+      includeHeaders: true
+      includeBody: true</code></pre>
+
+    <h2>Conclusion</h2>
+    <p>API Gateway is a critical component in microservices architecture that addresses the challenges of direct client access to multiple services. Spring Cloud Gateway provides a powerful, flexible solution for implementing API Gateway patterns.</p>
+
+    <h3>Key Takeaways</h3>
+    <ol>
+        <li><strong>Single Entry Point:</strong> Simplifies client configuration and reduces complexity</li>
+        <li><strong>Centralized Routing:</strong> All routing logic in one place, easy to manage</li>
+        <li><strong>Security Enforcement:</strong> Consistent security policies across all services</li>
+        <li><strong>Request Filtering:</strong> Modify requests/responses before/after routing</li>
+        <li><strong>Load Balancing:</strong> Automatic load balancing with service discovery</li>
+        <li><strong>Simplified Communication:</strong> Clients only need to know gateway URL</li>
+        <li><strong>Cross-Cutting Concerns:</strong> Centralized implementation of logging, monitoring, etc.</li>
+    </ol>
+
+    <h3>Best Practices</h3>
+    <ol>
+        <li>Use service discovery integration (Eureka)</li>
+        <li>Implement proper path rewriting</li>
+        <li>Add authentication and authorization filters</li>
+        <li>Implement rate limiting for production</li>
+        <li>Use circuit breakers for fault tolerance</li>
+        <li>Monitor gateway metrics and logs</li>
+        <li>Implement proper error handling</li>
+        <li>Use OpenAPI aggregation for documentation</li>
+    </ol>
+
+    <h3>Our Food Delivery Platform</h3>
+    <p>Our implementation demonstrates:</p>
+    <ul>
+        <li>Spring Cloud Gateway with service discovery</li>
+        <li>Centralized routing for 8 microservices</li>
+        <li>Path rewriting with StripPrefix</li>
+        <li>Load balancing with lb:// URIs</li>
+        <li>OpenAPI aggregation for unified documentation</li>
+        <li>Docker deployment support</li>
+        <li>Monitoring with Actuator</li>
+    </ul>
+
+    <p>This architecture provides a solid foundation for a scalable, secure, and maintainable microservices system.</p>
+
+    <h2>References</h2>
+    <ul>
+        <li><a href="https://spring.io/projects/spring-cloud-gateway">Spring Cloud Gateway Documentation</a></li>
+        <li><a href="https://spring.io/projects/spring-cloud-commons">Spring Cloud Load Balancer</a></li>
+        <li><a href="https://microservices.io/patterns/apigateway.html">API Gateway Pattern</a></li>
+        <li><a href="https://microservices.io/patterns/apigateway.html">Backend for Frontend Pattern</a></li>
+    </ul>
+
+    <hr>
+    <p><em>Document generated for Food Delivery Platform Microservices Architecture</em></p>
+</body>
+</html>

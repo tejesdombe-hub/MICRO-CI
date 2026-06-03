@@ -1,0 +1,316 @@
+# Food Delivery Platform — full stack in Docker
+# Host ports exposed: 8080 (gateway), 8761 (eureka), 8888 (config), 3306 (mysql)
+# Business services run ONLY inside food-network (no host port conflicts)
+
+x-business-common: &business-common
+  networks:
+    - food-network
+  dns:
+    - 8.8.8.8
+    - 8.8.4.4
+  depends_on:
+    mysql:
+      condition: service_healthy
+    discovery-server:
+      condition: service_healthy
+    config-server:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+  restart: unless-stopped
+  environment: &business-env
+    SPRING_PROFILES_ACTIVE: docker
+    SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    SPRING_DATASOURCE_USERNAME: root
+    SPRING_DATASOURCE_PASSWORD: root
+    SPRING_RABBITMQ_HOST: rabbitmq
+    SPRING_RABBITMQ_PORT: 5672
+    SPRING_RABBITMQ_USERNAME: admin
+    SPRING_RABBITMQ_PASSWORD: admin
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: fd-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3307:3306"   # host 3307 avoids conflict with local MySQL on 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init-databases.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: fd-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: discovery-server
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    container_name: fd-discovery
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      EUREKA_SERVER_ENABLE_SELF_PRESERVATION: "false"
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: config-server
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    container_name: fd-config
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-repo:/config-repo:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config-repo
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: config-server
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    restart: unless-stopped
+
+  auth-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: auth-service
+    container_name: fd-auth
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: auth-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  customer-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: customer-service
+    container_name: fd-customer
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: customer-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/customer_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  restaurant-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: restaurant-service
+    container_name: fd-restaurant
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: restaurant-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/restaurant_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  menu-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: menu-service
+    container_name: fd-menu
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: menu-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/menu_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  payment-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: payment-service
+    container_name: fd-payment
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: payment-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/payment_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  notification-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: notification-service
+    container_name: fd-notification
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: notification-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/notification_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_MAIL_USERNAME: khandekarom5505@gmail.com
+      SPRING_MAIL_PASSWORD: xprj kipa lzkn yumo
+      APP_EMAIL_ENABLED: true
+      APP_SMS_ENABLED: false
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-your-twilio-account-sid}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-your-twilio-auth-token}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-your-twilio-phone-number}
+
+  delivery-partner-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: delivery-partner-service
+    container_name: fd-delivery
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: delivery-partner-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  order-service:
+    <<: *business-common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: order-service
+    container_name: fd-order
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *business-env
+      SPRING_APPLICATION_NAME: order-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/order_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODULE: api-gateway
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    container_name: fd-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "true"
+      SPRINGDOC_API_DOCS_ENABLED: "true"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+      restaurant-service:
+        condition: service_started
+      menu-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      delivery-partner-service:
+        condition: service_started
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 12
+      start_period: 120s
+    restart: unless-stopped
+
+networks:
+  food-network:
+    name: food-network
+    driver: bridge
+
+volumes:
+  mysql_data:

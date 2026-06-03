@@ -1,0 +1,44 @@
+server:
+  port: 8088
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/notification_db?createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  config:
+    import: optional:configserver:http://localhost:8888/rabbitmq.yml
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: khandekarom5505@gmail.com
+    password: xprj kipa lzkn yumo
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+
+app:
+  email:
+    enabled: true
+  sms:
+    enabled: false
+
+twilio:
+  account:
+    sid: your-twilio-account-sid
+  auth:
+    token: your-twilio-auth-token
+  phone:
+    number: your-twilio-phone-number

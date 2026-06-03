@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Discovery in Microservices Architecture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .toc {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .diagram {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre;
+        }
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        @media print {
+            body {
+                font-size: 12pt;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+            pre, table {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Service Discovery in Microservices Architecture</h1>
+    <h2>A Comprehensive Guide with Netflix Eureka</h2>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#1-the-problem-of-hardcoded-service-urls">1. The Problem of Hardcoded Service URLs</a></li>
+            <li><a href="#2-what-is-service-discovery">2. What is Service Discovery?</a></li>
+            <li><a href="#3-client-side-vs-server-side-service-discovery">3. Client-side vs Server-side Service Discovery</a></li>
+            <li><a href="#4-introduction-to-netflix-eureka">4. Introduction to Netflix Eureka</a></li>
+            <li><a href="#5-dynamic-service-registration">5. Dynamic Service Registration</a></li>
+            <li><a href="#6-service-discovery-and-load-balancing">6. Service Discovery and Load Balancing</a></li>
+            <li><a href="#7-heartbeat-mechanism-and-automatic-deregistration">7. Heartbeat Mechanism and Automatic Deregistration</a></li>
+            <li><a href="#8-benefits-of-service-discovery">8. Benefits of Service Discovery</a></li>
+            <li><a href="#9-common-mistakes-and-configuration-issues">9. Common Mistakes and Configuration Issues</a></li>
+            <li><a href="#10-real-world-architecture-example">10. Real-world Architecture Example</a></li>
+        </ul>
+    </div>
+
+    <h2 id="1-the-problem-of-hardcoded-service-urls">1. The Problem of Hardcoded Service URLs</h2>
+    
+    <h3>The Challenge</h3>
+    <p>In a microservices architecture, services need to communicate with each other frequently. A naive approach is to hardcode the URLs of dependent services:</p>
+    
+    <pre><code>// Bad practice - Hardcoded URL
+String customerServiceUrl = "http://localhost:8081/api/customers";
+String orderServiceUrl = "http://localhost:8082/api/orders";</code></pre>
+
+    <h3>Problems with Hardcoded URLs</h3>
+    
+    <p><strong>1. Environment Dependency</strong></p>
+    <ul>
+        <li>Development: <code>localhost:8081</code></li>
+        <li>Staging: <code>staging-server:8081</code></li>
+        <li>Production: <code>prod-server-1:8081</code>, <code>prod-server-2:8081</code></li>
+    </ul>
+
+    <p><strong>2. Scalability Issues</strong></p>
+    <ul>
+        <li>When scaling horizontally, multiple instances run on different ports/hosts</li>
+        <li>Hardcoded URLs cannot handle dynamic instance addition/removal</li>
+    </ul>
+
+    <p><strong>3. Maintenance Overhead</strong></p>
+    <ul>
+        <li>Every service URL change requires code updates and redeployment</li>
+        <li>Configuration becomes complex and error-prone</li>
+    </ul>
+
+    <p><strong>4. Single Point of Failure</strong></p>
+    <ul>
+        <li>If a hardcoded instance fails, the calling service has no fallback mechanism</li>
+        <li>No automatic failover to healthy instances</li>
+    </ul>
+
+    <p><strong>5. Load Balancing Complexity</strong></p>
+    <ul>
+        <li>Manual load balancing requires custom implementation</li>
+        <li>Difficult to distribute traffic evenly across instances</li>
+    </ul>
+
+    <h3>Real-world Impact</h3>
+    <p>In our Food Delivery Platform, without service discovery:</p>
+    <ul>
+        <li>Order Service needs to know Customer Service URL</li>
+        <li>Order Service needs to know Restaurant Service URL</li>
+        <li>Order Service needs to know Payment Service URL</li>
+        <li>Each service would need configuration for every dependency</li>
+    </ul>
+
+    <h2 id="2-what-is-service-discovery">2. What is Service Discovery?</h2>
+    
+    <h3>Definition</h3>
+    <p>Service Discovery is the process of automatically detecting devices and services on a computer network. In microservices, it refers to the mechanism where services can find and communicate with each other without hardcoded configuration.</p>
+
+    <h3>Why is Service Discovery Required?</h3>
+    
+    <p><strong>1. Dynamic Environment</strong></p>
+    <ul>
+        <li>Services scale up and down automatically</li>
+        <li>Instances are created and destroyed dynamically (especially in cloud environments)</li>
+        <li>IP addresses and ports change frequently</li>
+    </ul>
+
+    <p><strong>2. High Availability</strong></p>
+    <ul>
+        <li>Services need to discover healthy instances automatically</li>
+        <li>Automatic failover when instances fail</li>
+        <li>No manual intervention required</li>
+    </ul>
+
+    <p><strong>3. Load Distribution</strong></p>
+    <ul>
+        <li>Distribute requests across multiple instances</li>
+        <li>Implement various load balancing strategies</li>
+        <li>Optimize resource utilization</li>
+    </ul>
+
+    <p><strong>4. Simplified Configuration</strong></p>
+    <ul>
+        <li>Services only need to know the service discovery server</li>
+        <li>No need to configure individual service URLs</li>
+        <li>Centralized service registry</li>
+    </ul>
+
+    <p><strong>5. Cloud-Native Architecture</strong></p>
+    <ul>
+        <li>Essential for container orchestration (Kubernetes, Docker Swarm)</li>
+        <li>Supports auto-scaling groups</li>
+        <li>Enables zero-downtime deployments</li>
+    </ul>
+
+    <h3>Core Components</h3>
+    <div class="diagram">
+┌─────────────────┐
+│  Service A      │
+│  (Producer)     │
+└────────┬────────┘
+         │ Registers
+         ▼
+┌─────────────────┐
+│  Service        │
+│  Registry       │
+│  (Eureka)       │
+└────────┬────────┘
+         │ Discovers
+         ▼
+┌─────────────────┐
+│  Service B      │
+│  (Consumer)     │
+└─────────────────┘
+    </div>
+
+    <h2 id="3-client-side-vs-server-side-service-discovery">3. Client-side vs Server-side Service Discovery</h2>
+    
+    <h3>Client-side Service Discovery</h3>
+    <p><strong>How it Works:</strong></p>
+    <ul>
+        <li>Client service queries the service registry</li>
+        <li>Registry returns available service instances</li>
+        <li>Client selects an instance (using load balancing)</li>
+        <li>Client makes direct calls to the selected instance</li>
+    </ul>
+
+    <p><strong>Architecture:</strong></p>
+    <pre>Client → Service Registry → Select Instance → Direct Call</pre>
+
+    <p><strong>Advantages:</strong></p>
+    <ul>
+        <li>Simpler architecture (no additional infrastructure)</li>
+        <li>Client has control over load balancing</li>
+        <li>Reduced network hops</li>
+        <li>Better performance (direct calls)</li>
+    </ul>
+
+    <p><strong>Disadvantages:</strong></p>
+    <ul>
+        <li>Client must implement service discovery logic</li>
+        <li>Tight coupling between client and registry</li>
+        <li>Complex client code</li>
+        <li>Difficult to update discovery logic across all services</li>
+    </ul>
+
+    <p><strong>Example:</strong> Netflix Eureka (Client-side)</p>
+
+    <h3>Server-side Service Discovery</h3>
+    <p><strong>How it Works:</strong></p>
+    <ul>
+        <li>Client makes requests to a load balancer</li>
+        <li>Load balancer queries service registry</li>
+        <li>Load balancer routes request to appropriate instance</li>
+        <li>Client is unaware of service discovery</li>
+    </ul>
+
+    <p><strong>Architecture:</strong></p>
+    <pre>Client → Load Balancer → Service Registry → Instance</pre>
+
+    <p><strong>Advantages:</strong></p>
+    <ul>
+        <li>Simpler client code</li>
+        <li>Centralized load balancing logic</li>
+        <li>Easy to update discovery strategy</li>
+        <li>Better for heterogeneous clients</li>
+    </ul>
+
+    <p><strong>Disadvantages:</strong></p>
+    <ul>
+        <li>Additional infrastructure component</li>
+        <li>Extra network hop (potential latency)</li>
+        <li>Single point of failure (load balancer)</li>
+        <li>More complex infrastructure</li>
+    </ul>
+
+    <p><strong>Example:</strong> AWS ALB, Kubernetes Service, Consul (Server-side)</p>
+
+    <h3>Comparison Table</h3>
+    <table>
+        <tr>
+            <th>Aspect</th>
+            <th>Client-side</th>
+            <th>Server-side</th>
+        </tr>
+        <tr>
+            <td>Complexity</td>
+            <td>Client complexity</td>
+            <td>Infrastructure complexity</td>
+        </tr>
+        <tr>
+            <td>Performance</td>
+            <td>Better (direct calls)</td>
+            <td>Good (one extra hop)</td>
+        </tr>
+        <tr>
+            <td>Scalability</td>
+            <td>High</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>Maintenance</td>
+            <td>Per-service updates</td>
+            <td>Centralized updates</td>
+        </tr>
+        <tr>
+            <td>Flexibility</td>
+            <td>High</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td>Use Case</td>
+            <td>Netflix Eureka</td>
+            <td>AWS ALB, K8s Service</td>
+        </tr>
+    </table>
+
+    <h3>Our Project's Approach</h3>
+    <p>Our Food Delivery Platform uses <strong>Client-side Service Discovery</strong> with Netflix Eureka:</p>
+    <ul>
+        <li>API Gateway uses <code>lb://service-name</code> for load balancing</li>
+        <li>Each service registers with Eureka server</li>
+        <li>Services discover each other through Eureka</li>
+        <li>Spring Cloud Load Balancer handles client-side load balancing</li>
+    </ul>
+
+    <h2 id="4-introduction-to-netflix-eureka">4. Introduction to Netflix Eureka</h2>
+    
+    <h3>What is Netflix Eureka?</h3>
+    <p>Netflix Eureka is a REST-based service, primarily for load balancing of middle-tier servers. It acts as a client-side service discovery server where each client service registers with the Eureka server.</p>
+
+    <h3>Key Features</h3>
+    
+    <p><strong>1. Service Registration</strong></p>
+    <ul>
+        <li>Services register themselves on startup</li>
+        <li>Provide metadata (host, port, health status)</li>
+        <li>Automatic registration with minimal configuration</li>
+    </ul>
+
+    <p><strong>2. Service Discovery</strong></p>
+    <ul>
+        <li>Clients query Eureka for service instances</li>
+        <li>Returns list of available instances</li>
+        <li>Supports filtering by metadata</li>
+    </ul>
+
+    <p><strong>3. Load Balancing</strong></p>
+    <ul>
+        <li>Integrates with Ribbon (deprecated) and Spring Cloud Load Balancer</li>
+        <li>Supports multiple load balancing strategies</li>
+        <li>Client-side load balancing</li>
+    </ul>
+
+    <p><strong>4. Fault Tolerance</strong></p>
+    <ul>
+        <li>Eureka server clustering for high availability</li>
+        <li>Client-side caching of registry information</li>
+        <li>Automatic failover</li>
+    </ul>
+
+    <p><strong>5. Self-Preservation Mode</strong></p>
+    <ul>
+        <li>Prevents mass deregistration during network partitions</li>
+        <li>Protects against false positives</li>
+        <li>Configurable thresholds</li>
+    </ul>
+
+    <h3>Eureka Architecture</h3>
+    <div class="diagram">
+                    ┌─────────────────┐
+                    │  Eureka Server  │
+                    │  (Registry)     │
+                    └────────┬────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+    Register            Register            Register
+         │                   │                   │
+         ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Service A  │   │   Service B  │   │   Service C  │
+│  Instance 1  │   │  Instance 1  │   │  Instance 1  │
+│  Instance 2  │   │  Instance 2  │   │  Instance 2  │
+└──────────────┘   └──────────────┘   └──────────────┘
+    </div>
+
+    <h3>Eureka Server Configuration</h3>
+    <p>In our project, the Eureka server is configured in <code>discovery-server/src/main/resources/application.yml</code>:</p>
+    
+    <pre><code>server:
+  port: 8761
+
+spring:
+  application:
+    name: discovery-server
+
+eureka:
+  client:
+    register-with-eureka: false  # Server doesn't register with itself
+    fetch-registry: false        # Server doesn't fetch registry
+  server:
+    enable-self-preservation: false  # Disable for development</code></pre>
+
+    <p><strong>Key Configuration Points:</strong></p>
+    <ul>
+        <li>Port 8761 is the default Eureka port</li>
+        <li>Server doesn't register with itself (it's the registry)</li>
+        <li>Self-preservation disabled for development (enable in production)</li>
+    </ul>
+
+    <h3>Eureka Client Configuration</h3>
+    <p>Services register with Eureka using configuration from Config Server:</p>
+    
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true</code></pre>
+
+    <p><strong>Docker Configuration:</strong></p>
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/</code></pre>
+
+    <h3>Dependencies</h3>
+    <pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-server&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+    <p>For clients:</p>
+    <pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-client&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+    <h2 id="5-dynamic-service-registration">5. Dynamic Service Registration</h2>
+    
+    <h3>Registration Process</h3>
+    
+    <p><strong>1. Service Startup</strong></p>
+    <ul>
+        <li>Service initializes and reads configuration</li>
+        <li>Connects to Config Server (if configured)</li>
+        <li>Loads Eureka client configuration</li>
+    </ul>
+
+    <p><strong>2. Registration</strong></p>
+    <ul>
+        <li>Service sends registration request to Eureka server</li>
+        <li>Includes metadata:
+            <ul>
+                <li>Service name (spring.application.name)</li>
+                <li>Host IP address</li>
+                <li>Port number</li>
+                <li>Health check URL</li>
+                <li>Status page URL</li>
+                <li>Custom metadata</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p><strong>3. Confirmation</strong></p>
+    <ul>
+        <li>Eureka server acknowledges registration</li>
+        <li>Service is now discoverable</li>
+        <li>Other services can now find this service</li>
+    </ul>
+
+    <h3>Registration Flow</h3>
+    <div class="diagram">
+┌──────────────┐
+│   Service    │
+│   Startup    │
+└──────┬───────┘
+       │
+       │ 1. Read Config
+       ▼
+┌──────────────┐
+│ Load Eureka  │
+│ Client Config│
+└──────┬───────┘
+       │
+       │ 2. Register
+       ▼
+┌──────────────┐
+│ Eureka Server│
+│ (Registry)   │
+└──────┬───────┘
+       │
+       │ 3. Acknowledge
+       ▼
+┌──────────────┐
+│ Service      │
+│ Registered   │
+└──────────────┘
+    </div>
+
+    <h3>Service Instance Metadata</h3>
+    <p>When a service registers, it provides the following information:</p>
+    
+    <pre><code>{
+  "instanceId": "order-service:192.168.1.100:8082",
+  "app": "ORDER-SERVICE",
+  "hostName": "192.168.1.100",
+  "ipAddr": "192.168.1.100",
+  "status": "UP",
+  "port": {
+    "$": 8082,
+    "@enabled": true
+  },
+  "healthCheckUrl": "http://192.168.1.100:8082/actuator/health",
+  "statusPageUrl": "http://192.168.1.100:8082/actuator/info",
+  "vipAddress": "order-service",
+  "secureVipAddress": "order-service",
+  "metadata": {
+    "zone": "us-east-1",
+    "version": "1.0.0"
+  }
+}</code></pre>
+
+    <h3>Registration in Our Project</h3>
+    <p><strong>Order Service Registration:</strong></p>
+    <pre><code># order-service/src/main/resources/application.yml
+spring:
+  application:
+    name: order-service
+  config:
+    import: optional:configserver:http://localhost:8888</code></pre>
+
+    <p>The Eureka configuration is centralized in Config Server:</p>
+    <pre><code># config-repo/application.yml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true</code></pre>
+
+    <h3>Dynamic Instance Addition</h3>
+    <p>When a new instance starts:</p>
+    <ol>
+        <li>It automatically registers with Eureka</li>
+        <li>Eureka updates its registry</li>
+        <li>Other services discover the new instance on next refresh</li>
+        <li>Load balancer includes new instance in rotation</li>
+    </ol>
+
+    <div class="success"><strong>No manual configuration required!</strong></div>
+
+    <h3>Dynamic Instance Removal</h3>
+    <p>When an instance shuts down:</p>
+    <ol>
+        <li>It sends deregistration request to Eureka</li>
+        <li>Eureka removes it from registry</li>
+        <li>Other services stop routing to it</li>
+        <li>Graceful shutdown ensures no in-flight requests are lost</li>
+    </ol>
+
+    <h2 id="6-service-discovery-and-load-balancing">6. Service Discovery and Load Balancing</h2>
+    
+    <h3>Discovery Process</h3>
+    
+    <p><strong>1. Client Query</strong></p>
+    <ul>
+        <li>Service A needs to call Service B</li>
+        <li>Service A queries Eureka for Service B instances</li>
+        <li>Eureka returns list of available instances</li>
+    </ul>
+
+    <p><strong>2. Instance Selection</strong></p>
+    <ul>
+        <li>Client uses load balancer to select instance</li>
+        <li>Various strategies available (Round Robin, Random, etc.)</li>
+        <li>Considers health status and metadata</li>
+    </ul>
+
+    <p><strong>3. Service Call</strong></p>
+    <ul>
+        <li>Client makes HTTP call to selected instance</li>
+        <li>If call fails, retries with another instance</li>
+        <li>Circuit breaker pattern for fault tolerance</li>
+    </ul>
+
+    <h3>Load Balancing Strategies</h3>
+    
+    <p><strong>1. Round Robin</strong></p>
+    <ul>
+        <li>Distributes requests sequentially</li>
+        <li>Simple and fair distribution</li>
+        <li>Good for similar capacity instances</li>
+    </ul>
+
+    <p><strong>2. Random</strong></p>
+    <ul>
+        <li>Randomly selects instance</li>
+        <li>Simple implementation</li>
+        <li>Good statistical distribution</li>
+    </ul>
+
+    <p><strong>3. Weighted Response Time</strong></p>
+    <ul>
+        <li>Considers instance response time</li>
+        <li>Faster instances get more requests</li>
+        <li>Optimizes overall performance</li>
+    </ul>
+
+    <p><strong>4. Zone-aware</strong></p>
+    <ul>
+        <li>Prefers instances in same zone</li>
+        <li>Reduces cross-zone latency</li>
+        <li>Important for multi-region deployments</li>
+    </ul>
+
+    <h3>Spring Cloud Load Balancer</h3>
+    <p>Our project uses Spring Cloud Load Balancer (replaces Ribbon):</p>
+
+    <p><strong>Configuration in API Gateway:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: order-service
+          uri: lb://order-service  # Load balanced
+          predicates:
+            - Path=/api/orders/**</code></pre>
+
+    <p><strong>Key Points:</strong></p>
+    <ul>
+        <li><code>lb://service-name</code> indicates load-balanced call</li>
+        <li>Spring Cloud Load Balancer resolves service name to instances</li>
+        <li>Automatically selects instance using configured strategy</li>
+        <li>Integrates with Eureka for instance discovery</li>
+    </ul>
+
+    <h3>Feign Client with Service Discovery</h3>
+    <p>Services can use Feign clients for declarative REST calls:</p>
+    
+    <pre><code>@FeignClient(name = "customer-service")
+public interface CustomerClient {
+    
+    @GetMapping("/api/customers/{id}")
+    CustomerDTO getCustomerById(@PathVariable("id") Long id);
+}</code></pre>
+
+    <p><strong>How it works:</strong></p>
+    <ol>
+        <li>Feign client uses service name (not URL)</li>
+        <li>Spring Cloud resolves service name via Eureka</li>
+        <li>Load balancer selects instance</li>
+        <li>Call is made to selected instance</li>
+    </ol>
+
+    <h3>Discovery Cache</h3>
+    <p>Eureka clients cache the registry locally:</p>
+    <ul>
+        <li>Reduces load on Eureka server</li>
+        <li>Provides resilience during server outages</li>
+        <li>Cache refreshes periodically (default 30 seconds)</li>
+        <li>Configurable refresh interval</li>
+    </ul>
+
+    <pre><code>eureka:
+  client:
+    registry-fetch-interval-seconds: 30</code></pre>
+
+    <h2 id="7-heartbeat-mechanism-and-automatic-deregistration">7. Heartbeat Mechanism and Automatic Deregistration</h2>
+    
+    <h3>Heartbeat (Renewal) Mechanism</h3>
+    <p><strong>Purpose:</strong></p>
+    <ul>
+        <li>Eureka server needs to know which instances are still alive</li>
+        <li>Services send periodic heartbeats to maintain registration</li>
+        <li>Missed heartbeats indicate instance failure</li>
+    </ul>
+
+    <p><strong>How it Works:</strong></p>
+    <ol>
+        <li>Service registers with Eureka</li>
+        <li>Service sends heartbeat every 30 seconds (default)</li>
+        <li>Eureka updates last-renewal timestamp</li>
+        <li>If heartbeat not received within timeout, instance marked as DOWN</li>
+    </ol>
+
+    <h3>Heartbeat Configuration</h3>
+    <pre><code>eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 30  # Heartbeat interval
+    lease-expiration-duration-in-seconds: 90  # Timeout before deregistration
+  client:
+    registry-fetch-interval-seconds: 30  # Cache refresh interval</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>lease-renewal-interval-in-seconds</code>: How often to send heartbeat</li>
+        <li><code>lease-expiration-duration-in-seconds</code>: How long before instance is considered dead</li>
+    </ul>
+
+    <h3>Automatic Deregistration</h3>
+    <p><strong>Process:</strong></p>
+    <ol>
+        <li>Instance stops sending heartbeats</li>
+        <li>Eureka waits for expiration duration</li>
+        <li>Instance status changes from UP to DOWN</li>
+        <li>Instance removed from registry after additional delay</li>
+        <li>Load balancer stops routing to instance</li>
+    </ol>
+
+    <h3>Graceful Shutdown</h3>
+    <pre><code>server:
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s</code></pre>
+
+    <p>With graceful shutdown:</p>
+    <ul>
+        <li>Service sends deregistration request before stopping</li>
+        <li>In-flight requests complete</li>
+        <li>No requests routed to shutting down instance</li>
+    </ul>
+
+    <h3>Self-Preservation Mode</h3>
+    <p><strong>What is it?</strong></p>
+    <p>Eureka's self-preservation mode prevents mass deregistration during network partitions.</p>
+
+    <p><strong>When it activates:</strong></p>
+    <ul>
+        <li>If >15% of instances fail to renew heartbeats</li>
+        <li>Eureka assumes network partition (not instance failures)</li>
+        <li>Stops expiring instances</li>
+        <li>Protects against false positives</li>
+    </ul>
+
+    <p><strong>Configuration:</strong></p>
+    <pre><code>eureka:
+  server:
+    enable-self-preservation: true
+    renewal-percent-threshold: 0.85</code></pre>
+
+    <p><strong>Trade-offs:</strong></p>
+    <ul>
+        <li>Pros: Prevents cascading failures</li>
+        <li>Cons: May route to dead instances temporarily</li>
+        <li>Recommendation: Enable in production, disable in development</li>
+    </ul>
+
+    <h3>Health Checks</h3>
+    <p>Eureka can use Spring Boot Actuator health checks:</p>
+    
+    <pre><code>eureka:
+  instance:
+    health-check-url-path: /actuator/health
+    status-page-url-path: /actuator/info</code></pre>
+
+    <p><strong>Custom Health Indicators:</strong></p>
+    <pre><code>@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
+    
+    @Override
+    public Health health() {
+        if (databaseIsHealthy()) {
+            return Health.up().build();
+        }
+        return Health.down().withDetail("error", "Database connection failed").build();
+    }
+}</code></pre>
+
+    <h3>Monitoring Heartbeats</h3>
+    <p>Eureka Dashboard shows:</p>
+    <ul>
+        <li>Instance status (UP/DOWN)</li>
+        <li>Last heartbeat timestamp</li>
+        <li>Renewal interval</li>
+        <li>Number of registered instances</li>
+    </ul>
+
+    <p>Access at: <code>http://localhost:8761</code></p>
+
+    <h2 id="8-benefits-of-service-discovery">8. Benefits of Service Discovery</h2>
+    
+    <h3>1. Dynamic Scalability</h3>
+    <p><strong>Horizontal Scaling:</strong></p>
+    <ul>
+        <li>Add instances without configuration changes</li>
+        <li>Automatic registration of new instances</li>
+        <li>Load balancer immediately includes new instances</li>
+        <li>Supports auto-scaling policies</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <pre><code># Scale order-service to 3 instances
+docker-compose up --scale order-service=3</code></pre>
+    <p>All 3 instances automatically register and receive traffic.</p>
+
+    <h3>2. High Availability</h3>
+    <p><strong>Fault Tolerance:</strong></p>
+    <ul>
+        <li>Automatic failover to healthy instances</li>
+        <li>No single point of failure (with Eureka clustering)</li>
+        <li>Client-side caching provides resilience</li>
+        <li>Graceful degradation</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+    <p>If order-service instance 1 fails:</p>
+    <ol>
+        <li>Eureka detects failure (missed heartbeats)</li>
+        <li>Load balancer routes to instances 2 and 3</li>
+        <li>Users experience no downtime</li>
+    </ol>
+
+    <h3>3. Simplified Configuration</h3>
+    <p><strong>Centralized Registry:</strong></p>
+    <ul>
+        <li>No need to configure service URLs</li>
+        <li>Services only need Eureka server location</li>
+        <li>Configuration server can provide Eureka config</li>
+        <li>Environment-specific configuration</li>
+    </ul>
+
+    <p><strong>Before Service Discovery:</strong></p>
+    <pre><code>services:
+  customer-service:
+    url: http://customer-service-1:8081,http://customer-service-2:8081
+  order-service:
+    url: http://order-service-1:8082,http://order-service-2:8082</code></pre>
+
+    <p><strong>With Service Discovery:</strong></p>
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/</code></pre>
+
+    <h3>4. Load Balancing</h3>
+    <p><strong>Built-in Load Distribution:</strong></p>
+    <ul>
+        <li>Automatic load balancing across instances</li>
+        <li>Multiple strategies available</li>
+        <li>Zone-aware routing for multi-region</li>
+        <li>Weighted routing for heterogeneous instances</li>
+    </ul>
+
+    <h3>5. Cloud-Native Support</h3>
+    <p><strong>Container Orchestration:</strong></p>
+    <ul>
+        <li>Works seamlessly with Docker</li>
+        <li>Supports Kubernetes (though K8s has its own service discovery)</li>
+        <li>Ideal for dynamic cloud environments</li>
+        <li>Supports blue-green deployments</li>
+    </ul>
+
+    <h3>6. Operational Benefits</h3>
+    <p><strong>Monitoring:</strong></p>
+    <ul>
+        <li>Centralized view of all services</li>
+        <li>Health status dashboard</li>
+        <li>Instance count tracking</li>
+        <li>Metadata for organizational information</li>
+    </ul>
+
+    <p><strong>Debugging:</strong></p>
+    <ul>
+        <li>Service dependency visualization</li>
+        <li>Request tracing integration</li>
+        <li>Instance-level metrics</li>
+        <li>Centralized logging correlation</li>
+    </ul>
+
+    <h3>7. Developer Productivity</h3>
+    <p><strong>Faster Development:</strong></p>
+    <ul>
+        <li>No need to manage service URLs</li>
+        <li>Local development simplified</li>
+        <li>Easy to add new services</li>
+        <li>Reduced configuration errors</li>
+    </ul>
+
+    <h3>8. Cost Optimization</h3>
+    <p><strong>Resource Efficiency:</strong></p>
+    <ul>
+        <li>Scale based on actual demand</li>
+        <li>Avoid over-provisioning</li>
+        <li>Automatic instance termination</li>
+        <li>Better resource utilization</li>
+    </ul>
+
+    <h2 id="9-common-mistakes-and-configuration-issues">9. Common Mistakes and Configuration Issues</h2>
+    
+    <h3>1. Hardcoded Service URLs</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>String url = "http://localhost:8082/api/orders";</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>@FeignClient(name = "order-service")
+public interface OrderClient {
+    // Use service name, not URL
+}</code></pre>
+
+    <h3>2. Incorrect Eureka Server URL</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka  # Missing trailing slash</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/  # Include trailing slash</code></pre>
+
+    <h3>3. Server Registering with Itself</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>eureka:
+  client:
+    register-with-eureka: true  # Wrong for Eureka server</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  client:
+    register-with-eureka: false  # Correct for Eureka server</code></pre>
+
+    <h3>4. Missing Spring Cloud Dependencies</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-client&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;!-- Missing dependency management --&gt;</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-dependencies&lt;/artifactId&gt;
+            &lt;version&gt;2023.0.3&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;</code></pre>
+
+    <h3>5. Wrong Application Name</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>spring:
+  application:
+    name: order-service  # Must match exactly in all calls</code></pre>
+    <p>But calling with:</p>
+    <pre><code>@FeignClient(name = "Order-Service")  // Case mismatch!</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <p>Use consistent naming (lowercase with hyphens is recommended).</p>
+
+    <h3>6. Ignoring Health Checks</h3>
+    <p><strong>Mistake:</strong></p>
+    <p>Not configuring health checks, leading to routing to unhealthy instances.</p>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  instance:
+    health-check-url-path: /actuator/health</code></pre>
+
+    <h3>7. Self-Preservation in Development</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>eureka:
+  server:
+    enable-self-preservation: true  # Causes issues in dev</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  server:
+    enable-self-preservation: false  # Disable in development</code></pre>
+
+    <h3>8. Short Lease Expiration</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>eureka:
+  instance:
+    lease-expiration-duration-in-seconds: 10  # Too short!</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  instance:
+    lease-expiration-duration-in-seconds: 90  # Reasonable default</code></pre>
+
+    <h3>9. Not Using Load Balancer Prefix</h3>
+    <p><strong>Mistake:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: http://order-service  # Not load balanced!</code></pre>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service  # Load balanced!</code></pre>
+
+    <h3>10. Missing Instance ID</h3>
+    <p><strong>Mistake:</strong></p>
+    <p>Multiple instances have same instance ID, causing conflicts.</p>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}</code></pre>
+
+    <h3>11. Network Issues in Docker</h3>
+    <p><strong>Mistake:</strong></p>
+    <p>Using <code>localhost</code> in Docker Compose configuration.</p>
+
+    <p><strong>Solution:</strong></p>
+    <pre><code>eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/  # Use service name</code></pre>
+
+    <h3>12. Not Clustering Eureka Server</h3>
+    <p><strong>Mistake:</strong></p>
+    <p>Single Eureka server in production (single point of failure).</p>
+
+    <p><strong>Solution:</strong></p>
+    <p>Deploy Eureka server cluster with peer awareness.</p>
+
+    <h2 id="10-real-world-architecture-example">10. Real-world Architecture Example</h2>
+    
+    <h3>Our Food Delivery Platform Architecture</h3>
+    <div class="diagram">
+                    ┌─────────────────────────────────┐
+                    │         API Gateway             │
+                    │         (Port 8080)             │
+                    │  Uses lb:// for all services    │
+                    └──────────────┬──────────────────┘
+                                   │
+                    ┌──────────────┴──────────────────┐
+                    │                                 │
+                    ▼                                 ▼
+         ┌──────────────────┐              ┌──────────────────┐
+         │  Discovery       │              │   Config Server  │
+         │  Server          │              │   (Port 8888)    │
+         │  (Port 8761)     │              └──────────────────┘
+         │  Eureka          │
+         └──────────────────┘
+                    │
+    ┌───────────────┼───────────────┬───────────────┐
+    │               │               │               │
+    ▼               ▼               ▼               ▼
+┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
+│  Auth   │   │Customer │   │Restaurant│   │  Menu   │
+│ Service │   │ Service │   │ Service  │   │ Service │
+│ :8081   │   │ :8082   │   │ :8083    │   │ :8084   │
+└─────────┘   └─────────┘   └─────────┘   └─────────┘
+    │               │               │               │
+    └───────────────┼───────────────┼───────────────┘
+                    │               │
+                    ▼               ▼
+              ┌─────────┐   ┌─────────┐
+              │  Order  │   │Payment  │
+              │ Service │   │ Service │
+              │ :8085   │   │ :8086   │
+              └─────────┘   └─────────┘
+                    │
+                    ▼
+              ┌─────────┐   ┌─────────┐
+              │Delivery │   │Notification│
+              │Partner  │   │ Service  │
+              │ Service │   │ :8088    │
+              │ :8087   │   └─────────┘
+              └─────────┘
+    </div>
+
+    <h3>Service Registration Flow</h3>
+    
+    <p><strong>1. Discovery Server Startup</strong></p>
+    <pre><code># Starts on port 8761
+java -jar discovery-server/target/discovery-server.jar</code></pre>
+    <ul>
+        <li>Acts as service registry</li>
+        <li>Doesn't register with itself</li>
+        <li>Provides dashboard at http://localhost:8761</li>
+    </ul>
+
+    <p><strong>2. Config Server Startup</strong></p>
+    <pre><code># Starts on port 8888
+java -jar config-server/target/config-server.jar</code></pre>
+    <ul>
+        <li>Provides centralized configuration</li>
+        <li>Serves Eureka client configuration</li>
+        <li>All services fetch config from here</li>
+    </ul>
+
+    <p><strong>3. Service Startup (e.g., Order Service)</strong></p>
+    <pre><code>java -jar order-service/target/order-service.jar</code></pre>
+
+    <p><strong>Registration Process:</strong></p>
+    <ol>
+        <li>Order Service reads <code>application.yml</code></li>
+        <li>Connects to Config Server at <code>localhost:8888</code></li>
+        <li>Fetches Eureka configuration from Config Server</li>
+        <li>Registers with Discovery Server at <code>localhost:8761</code></li>
+        <li>Sends heartbeat every 30 seconds</li>
+        <li>Now discoverable by other services</li>
+    </ol>
+
+    <p><strong>4. API Gateway Startup</strong></p>
+    <pre><code>java -jar api-gateway/target/api-gateway.jar</code></pre>
+    <ul>
+        <li>Registers with Eureka</li>
+        <li>Discovers all registered services</li>
+        <li>Configures routes using <code>lb://service-name</code></li>
+        <li>Load balances requests across instances</li>
+    </ul>
+
+    <h3>Service Discovery in Action</h3>
+    
+    <p><strong>Example: Order Service calling Customer Service</strong></p>
+
+    <p><strong>Without Service Discovery:</strong></p>
+    <pre><code>// Hardcoded - bad practice
+String customerUrl = "http://localhost:8082/api/customers/" + customerId;</code></pre>
+
+    <p><strong>With Service Discovery:</strong></p>
+    <pre><code>@FeignClient(name = "customer-service")
+public interface CustomerClient {
+    
+    @GetMapping("/api/customers/{id}")
+    CustomerDTO getCustomerById(@PathVariable("id") Long id);
+}
+
+// Usage
+CustomerDTO customer = customerClient.getCustomerById(customerId);</code></pre>
+
+    <p><strong>What happens behind the scenes:</strong></p>
+    <ol>
+        <li>Feign client resolves "customer-service" via Eureka</li>
+        <li>Eureka returns: <code>[{host: "192.168.1.100", port: 8082}, {host: "192.168.1.101", port: 8082}]</code></li>
+        <li>Spring Cloud Load Balancer selects instance (Round Robin)</li>
+        <li>Call made to: <code>http://192.168.1.100:8082/api/customers/123</code></li>
+        <li>If fails, retries with next instance</li>
+    </ol>
+
+    <h3>API Gateway Routing</h3>
+    <p><strong>Configuration:</strong></p>
+    <pre><code>spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**</code></pre>
+
+    <p><strong>Request Flow:</strong></p>
+    <ol>
+        <li>Client calls: <code>http://localhost:8080/api/orders</code></li>
+        <li>API Gateway matches route</li>
+        <li>Resolves <code>lb://order-service</code> via Eureka</li>
+        <li>Load balancer selects order-service instance</li>
+        <li>Routes to: <code>http://order-service-instance:8085/api/orders</code></li>
+        <li>Returns response to client</li>
+    </ol>
+
+    <h3>Docker Deployment</h3>
+    <p><strong>Docker Compose Configuration:</strong></p>
+    <pre><code>version: '3.8'
+services:
+  discovery-server:
+    image: food-delivery/discovery-server
+    ports:
+      - "8761:8761"
+  
+  config-server:
+    image: food-delivery/config-server
+    ports:
+      - "8888:8888"
+  
+  order-service:
+    image: food-delivery/order-service
+    depends_on:
+      - discovery-server
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker</code></pre>
+
+    <p><strong>Docker Configuration:</strong></p>
+    <pre><code># config-repo/application-docker.yml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/</code></pre>
+
+    <p><strong>Key Points:</strong></p>
+    <ul>
+        <li>Services use Docker service names (not localhost)</li>
+        <li>Eureka server accessible as <code>discovery-server:8761</code></li>
+        <li>All services register with Eureka</li>
+        <li>API Gateway uses <code>lb://</code> for load balancing</li>
+    </ul>
+
+    <h3>Scaling Example</h3>
+    <p><strong>Scale Order Service:</strong></p>
+    <pre><code>docker-compose up --scale order-service=3</code></pre>
+
+    <p><strong>What happens:</strong></p>
+    <ol>
+        <li>Three order-service containers start</li>
+        <li>Each registers with Eureka</li>
+        <li>Eureka shows 3 instances</li>
+        <li>API Gateway load balances across all 3</li>
+        <li>No configuration changes needed!</li>
+    </ol>
+
+    <h3>Monitoring</h3>
+    <p><strong>Eureka Dashboard:</strong></p>
+    <ul>
+        <li>URL: <code>http://localhost:8761</code></li>
+        <li>Shows all registered services</li>
+        <li>Instance status (UP/DOWN)</li>
+        <li>Last heartbeat timestamp</li>
+        <li>Instance count per service</li>
+    </ul>
+
+    <p><strong>Actuator Endpoints:</strong></p>
+    <ul>
+        <li>Health: <code>/actuator/health</code></li>
+        <li>Info: <code>/actuator/info</code></li>
+        <li>Metrics: <code>/actuator/metrics</code></li>
+        <li>Env: <code>/actuator/env</code></li>
+    </ul>
+
+    <h3>Benefits in Our Architecture</h3>
+    
+    <p><strong>1. Dynamic Service Addition</strong></p>
+    <ul>
+        <li>Add new service (e.g., Rating Service)</li>
+        <li>Register with Eureka</li>
+        <li>API Gateway automatically discovers it</li>
+        <li>No configuration changes in other services</li>
+    </ul>
+
+    <p><strong>2. Horizontal Scaling</strong></p>
+    <ul>
+        <li>Scale any service independently</li>
+        <li>Auto-registration with Eureka</li>
+        <li>Automatic load balancing</li>
+        <li>Handle increased load</li>
+    </ul>
+
+    <p><strong>3. Fault Tolerance</strong></p>
+    <ul>
+        <li>Instance failure detected via heartbeat</li>
+        <li>Automatic failover to healthy instances</li>
+        <li>No manual intervention required</li>
+        <li>High availability</li>
+    </ul>
+
+    <p><strong>4. Simplified Development</strong></p>
+    <ul>
+        <li>Developers don't need to know service URLs</li>
+        <li>Use service names in Feign clients</li>
+        <li>Easy local development</li>
+        <li>Consistent across environments</li>
+    </ul>
+
+    <p><strong>5. Production Ready</strong></p>
+    <ul>
+        <li>Supports Eureka clustering</li>
+        <li>Self-preservation mode</li>
+        <li>Zone-aware routing</li>
+        <li>Comprehensive monitoring</li>
+    </ul>
+
+    <h2>Conclusion</h2>
+    <p>Service Discovery is a fundamental pattern in microservices architecture that addresses the challenges of dynamic, distributed systems. Netflix Eureka provides a robust, production-ready solution for service registration and discovery.</p>
+
+    <h3>Key Takeaways</h3>
+    <ol>
+        <li><strong>Eliminate Hardcoded URLs:</strong> Use service names instead of hardcoded URLs</li>
+        <li><strong>Dynamic Registration:</strong> Services automatically register on startup</li>
+        <li><strong>Load Balancing:</strong> Built-in client-side load balancing</li>
+        <li><strong>Fault Tolerance:</strong> Heartbeat mechanism and automatic failover</li>
+        <li><strong>Scalability:</strong> Easy horizontal scaling without configuration changes</li>
+        <li><strong>Simplified Operations:</strong> Centralized service registry and monitoring</li>
+    </ol>
+
+    <h3>Best Practices</h3>
+    <ol>
+        <li>Enable self-preservation in production</li>
+        <li>Configure health checks for accurate instance status</li>
+        <li>Use appropriate lease expiration intervals</li>
+        <li>Cluster Eureka servers for high availability</li>
+        <li>Monitor Eureka dashboard regularly</li>
+        <li>Use zone-aware routing for multi-region deployments</li>
+        <li>Implement graceful shutdown</li>
+        <li>Test failover scenarios</li>
+    </ol>
+
+    <h3>Our Food Delivery Platform</h3>
+    <p>Our implementation demonstrates:</p>
+    <ul>
+        <li>Eureka server as centralized registry</li>
+        <li>Config server for centralized configuration</li>
+        <li>API Gateway with service discovery</li>
+        <li>Feign clients for inter-service communication</li>
+        <li>Docker deployment with service discovery</li>
+        <li>Horizontal scaling capabilities</li>
+    </ul>
+
+    <p>This architecture provides a solid foundation for a scalable, resilient microservices system.</p>
+
+    <h2>References</h2>
+    <ul>
+        <li><a href="https://spring.io/projects/spring-cloud-netflix">Spring Cloud Netflix Eureka Documentation</a></li>
+        <li><a href="https://github.com/Netflix/eureka">Netflix Eureka GitHub</a></li>
+        <li><a href="https://spring.io/projects/spring-cloud-commons">Spring Cloud Load Balancer</a></li>
+        <li><a href="https://microservices.io/patterns/service-registry.html">Microservices Patterns</a></li>
+    </ul>
+
+    <hr>
+    <p><em>Document generated for Food Delivery Platform Microservices Architecture</em></p>
+</body>
+</html>
