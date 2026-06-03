@@ -17,33 +17,9 @@ This document provides a comprehensive overview of all test cases created for th
 
 ## 1. Auth Service Tests
 
-### Location
-- **Unit Tests:** `auth-service/src/test/java/com/fooddelivery/auth/service/AuthServiceImplTest.java`
-- **Integration Tests:** `auth-service/src/test/java/com/fooddelivery/auth/controller/AuthControllerTest.java`
+**Status:** ⛔ REMOVED (Per user request)
 
-### Test Cases (14 tests)
-
-#### Service Layer Tests (AuthServiceImplTest)
-| # | Test Case | Purpose | Expected Result |
-|---|-----------|---------|-----------------|
-| 1 | testRegisterSuccess | Register user with valid credentials | User created with JWT token |
-| 2 | testRegisterWithDuplicateEmail | Prevent duplicate email registration | InvalidRequestException thrown |
-| 3 | testLoginSuccess | Login with correct credentials | JWT token returned |
-| 4 | testLoginUserNotFound | Login with non-existent email | ResourceNotFoundException thrown |
-| 5 | testLoginIncorrectPassword | Login with wrong password | UnauthorizedException thrown |
-| 6 | testValidateToken | Validate JWT token | Returns true for valid token |
-| 7 | testGetEmailFromToken | Extract email from JWT | Correct email extracted |
-
-#### Controller Layer Tests (AuthControllerTest)
-| # | Test Case | Purpose | Expected Result |
-|---|-----------|---------|-----------------|
-| 8 | testRegisterSuccess | POST /api/auth/register with valid data | HTTP 201 (Created) |
-| 9 | testLoginSuccess | POST /api/auth/login with valid data | HTTP 200 with token |
-| 10 | testRegisterInvalidRequest | POST with missing fields | HTTP 400 (Bad Request) |
-| 11 | testRegisterInvalidEmail | POST with invalid email format | HTTP 400 |
-| 12 | testRegisterEmptyPassword | POST with empty password | HTTP 400 |
-| 13 | testControllerIntegration | Full request-response flow | Proper JSON response |
-| 14 | testErrorHandling | Handle service exceptions | Proper HTTP error codes |
+Auth service tests have been removed from the test suite.
 
 ---
 
@@ -230,18 +206,18 @@ This document provides a comprehensive overview of all test cases created for th
 ## Test Statistics
 
 ### By Service
-| Service | Unit Tests | Integration Tests | Total |
-|---------|-----------|------------------|-------|
-| Auth | 7 | 7 | 14 |
-| Customer | 12 | 8 | 20 |
-| Order | 11 | - | 11 |
-| Payment | 8 | - | 8 |
-| Restaurant | 9 | - | 9 |
-| Menu | 12 | - | 12 |
-| Delivery Partner | 11 | - | 11 |
-| Notification | 13 | - | 13 |
+| Service | Unit Tests | Integration Tests | Total | Status |
+|---------|-----------|------------------|-------|--------|
+| Auth | - | - | - | ⛔ Removed |
+| Customer | 12 | 8 | 20 | ✅ |
+| Order | 11 | - | 11 | ✅ |
+| Payment | 8 | - | 8 | ✅ |
+| Restaurant | 9 | - | 9 | ✅ |
+| Menu | 12 | - | 12 | ✅ |
+| Delivery Partner | 11 | - | 11 | ✅ |
+| Notification | 13 | - | 13 | ✅ |
 
-**Total Test Cases: 102**
+**Total Test Cases: 88** (14 Auth tests removed)
 
 ---
 

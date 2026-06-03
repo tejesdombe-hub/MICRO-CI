@@ -8,29 +8,17 @@
 ## Summary of Changes
 
 ### Statistics
-- **New Test Files Created:** 10
+- **New Test Files Created:** 8 (Auth removed)
 - **Modified Files:** 1
 - **Documentation Files Created:** 1
-- **Total Files Changed:** 12
+- **Total Files Changed:** 10
 
 ---
 
 ## New Test Files Created (10 files)
 
 ### Auth Service
-1. **`auth-service/src/test/java/com/fooddelivery/auth/service/AuthServiceImplTest.java`**
-   - Type: Unit Test
-   - Coverage: AuthService interface implementation
-   - Test Count: 7 tests
-   - Tests: Register, Login, Token validation
-   - Dependencies Mocked: AuthRepository, PasswordEncoder, JwtTokenProvider
-
-2. **`auth-service/src/test/java/com/fooddelivery/auth/controller/AuthControllerTest.java`**
-   - Type: Integration Test
-   - Coverage: AuthController REST endpoints
-   - Test Count: 7 tests
-   - Tests: POST /register, POST /login, validation errors
-   - Tools: MacMvc, ObjectMapper
+**Status:** ⛔ Test files removed per user request (June 3, 2026)
 
 ### Customer Service
 3. **`customer-service/src/test/java/com/fooddelivery/customer/service/CustomerServiceImplTest.java`**
