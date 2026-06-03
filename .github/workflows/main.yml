@@ -54,6 +54,7 @@ jobs:
           fail-on-error: false
 
       - name: Build Discovery Server Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=discovery-server \
@@ -61,6 +62,7 @@ jobs:
             .
 
       - name: Build Config Server Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=config-server \
@@ -68,6 +70,7 @@ jobs:
             .
 
       - name: Build API Gateway Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=api-gateway \
@@ -75,6 +78,7 @@ jobs:
             .
 
       - name: Build Auth Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=auth-service \
@@ -82,6 +86,7 @@ jobs:
             .
 
       - name: Build Customer Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=customer-service \
@@ -89,6 +94,7 @@ jobs:
             .
 
       - name: Build Restaurant Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=restaurant-service \
@@ -96,6 +102,7 @@ jobs:
             .
 
       - name: Build Menu Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=menu-service \
@@ -103,6 +110,7 @@ jobs:
             .
 
       - name: Build Order Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=order-service \
@@ -110,6 +118,7 @@ jobs:
             .
 
       - name: Build Payment Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=payment-service \
@@ -117,6 +126,7 @@ jobs:
             .
 
       - name: Build Notification Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=notification-service \
@@ -124,6 +134,7 @@ jobs:
             .
 
       - name: Build Delivery Partner Service Image
+        if: success()
         run: |
           docker build \
             --build-arg SERVICE_MODULE=delivery-partner-service \
