@@ -1,6 +1,5 @@
 package com.fooddelivery.restaurant.service;
 
-import com.fooddelivery.common.exception.InvalidRequestException;
 import com.fooddelivery.common.exception.ResourceNotFoundException;
 import com.fooddelivery.restaurant.dto.RestaurantRequestDto;
 import com.fooddelivery.restaurant.dto.RestaurantResponseDto;
@@ -43,33 +42,26 @@ class RestaurantServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        requestDto = RestaurantRequestDto.builder()
-                .name("Pizza Palace")
-                .email("pizza@example.com")
-                .phone("9876543210")
-                .address("Mumbai, India")
-                .cuisineType("Italian")
-                .isActive(true)
-                .build();
+        requestDto = new RestaurantRequestDto();
+        requestDto.setRestaurantName("Pizza Palace");
+        requestDto.setOwnerName("John Doe");
+        requestDto.setAddress("Mumbai, India");
+        requestDto.setRating(4.5);
 
         responseDto = RestaurantResponseDto.builder()
                 .id(1L)
-                .name("Pizza Palace")
-                .email("pizza@example.com")
-                .phone("9876543210")
+                .restaurantName("Pizza Palace")
+                .ownerName("John Doe")
                 .address("Mumbai, India")
-                .cuisineType("Italian")
-                .isActive(true)
+                .rating(4.5)
                 .build();
 
         restaurant = Restaurant.builder()
                 .id(1L)
-                .name("Pizza Palace")
-                .email("pizza@example.com")
-                .phone("9876543210")
+                .restaurantName("Pizza Palace")
+                .ownerName("John Doe")
                 .address("Mumbai, India")
-                .cuisineType("Italian")
-                .isActive(true)
+                .rating(4.5)
                 .build();
     }
 
@@ -77,7 +69,6 @@ class RestaurantServiceImplTest {
     @DisplayName("Should create restaurant successfully")
     void testCreateRestaurantSuccess() {
         // Arrange
-        when(restaurantRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
         when(restaurantMapper.toEntity(requestDto)).thenReturn(restaurant);
         when(restaurantRepository.save(any(Restaurant.class))).thenReturn(restaurant);
         when(restaurantMapper.toResponse(restaurant)).thenReturn(responseDto);
@@ -88,25 +79,9 @@ class RestaurantServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getName()).isEqualTo("Pizza Palace");
-        assertThat(result.isActive()).isTrue();
+        assertThat(result.getRestaurantName()).isEqualTo("Pizza Palace");
 
-        verify(restaurantRepository).existsByEmail(requestDto.getEmail());
         verify(restaurantRepository).save(any(Restaurant.class));
-    }
-
-    @Test
-    @DisplayName("Should throw exception when email already exists")
-    void testCreateRestaurantDuplicateEmail() {
-        // Arrange
-        when(restaurantRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
-
-        // Act & Assert
-        assertThatThrownBy(() -> restaurantService.create(requestDto))
-                .isInstanceOf(InvalidRequestException.class)
-                .hasMessageContaining("Email already exists");
-
-        verify(restaurantRepository, never()).save(any());
     }
 
     @Test
@@ -122,7 +97,7 @@ class RestaurantServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getName()).isEqualTo("Pizza Palace");
+        assertThat(result.getRestaurantName()).isEqualTo("Pizza Palace");
 
         verify(restaurantRepository).findById(1L);
     }
@@ -142,26 +117,26 @@ class RestaurantServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should get all active restaurants")
-    void testGetAllActiveRestaurants() {
+    @DisplayName("Should get all restaurants")
+    void testGetAllRestaurants() {
         // Arrange
         Restaurant restaurant2 = Restaurant.builder()
                 .id(2L)
-                .name("Burger King")
-                .email("burger@example.com")
-                .cuisineType("American")
-                .isActive(true)
+                .restaurantName("Burger King")
+                .ownerName("Jane Smith")
+                .address("Delhi, India")
+                .rating(4.0)
                 .build();
 
         RestaurantResponseDto responseDto2 = RestaurantResponseDto.builder()
                 .id(2L)
-                .name("Burger King")
-                .email("burger@example.com")
-                .cuisineType("American")
-                .isActive(true)
+                .restaurantName("Burger King")
+                .ownerName("Jane Smith")
+                .address("Delhi, India")
+                .rating(4.0)
                 .build();
 
-        when(restaurantRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(restaurant, restaurant2));
+        when(restaurantRepository.findAll()).thenReturn(Arrays.asList(restaurant, restaurant2));
         when(restaurantMapper.toResponse(restaurant)).thenReturn(responseDto);
         when(restaurantMapper.toResponse(restaurant2)).thenReturn(responseDto2);
 
@@ -170,25 +145,23 @@ class RestaurantServiceImplTest {
 
         // Assert
         assertThat(results).hasSize(2);
-        assertThat(results.get(0).getName()).isEqualTo("Pizza Palace");
-        assertThat(results.get(1).getName()).isEqualTo("Burger King");
+        assertThat(results.get(0).getRestaurantName()).isEqualTo("Pizza Palace");
+        assertThat(results.get(1).getRestaurantName()).isEqualTo("Burger King");
 
-        verify(restaurantRepository).findByIsActiveTrue();
+        verify(restaurantRepository).findAll();
     }
 
     @Test
     @DisplayName("Should update restaurant successfully")
     void testUpdateRestaurantSuccess() {
         // Arrange
-        RestaurantRequestDto updateRequest = RestaurantRequestDto.builder()
-                .name("Pizza Palace Updated")
-                .email("pizza@example.com")
-                .cuisineType("Italian")
-                .isActive(true)
-                .build();
+        RestaurantRequestDto updateRequest = new RestaurantRequestDto();
+        updateRequest.setRestaurantName("Pizza Palace Updated");
+        updateRequest.setOwnerName("John Doe");
+        updateRequest.setAddress("Mumbai, India");
+        updateRequest.setRating(4.8);
 
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
-        doNothing().when(restaurantMapper).updateEntity(restaurant, updateRequest);
         when(restaurantRepository.save(restaurant)).thenReturn(restaurant);
         when(restaurantMapper.toResponse(restaurant)).thenReturn(responseDto);
 
@@ -199,22 +172,37 @@ class RestaurantServiceImplTest {
         assertThat(result).isNotNull();
 
         verify(restaurantRepository).findById(1L);
+        verify(restaurantMapper).update(restaurant, updateRequest);
         verify(restaurantRepository).save(restaurant);
     }
 
     @Test
-    @DisplayName("Should deactivate restaurant successfully")
-    void testDeactivateRestaurantSuccess() {
+    @DisplayName("Should delete restaurant successfully")
+    void testDeleteRestaurantSuccess() {
         // Arrange
-        when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
-        when(restaurantRepository.save(any(Restaurant.class))).thenReturn(restaurant);
+        when(restaurantRepository.existsById(1L)).thenReturn(true);
 
         // Act
-        restaurantService.deactivate(1L);
+        restaurantService.delete(1L);
 
         // Assert
-        verify(restaurantRepository).findById(1L);
-        verify(restaurantRepository).save(any(Restaurant.class));
+        verify(restaurantRepository).existsById(1L);
+        verify(restaurantRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deleting non-existent restaurant")
+    void testDeleteRestaurantNotFound() {
+        // Arrange
+        when(restaurantRepository.existsById(999L)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> restaurantService.delete(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Restaurant not found");
+
+        verify(restaurantRepository).existsById(999L);
+        verify(restaurantRepository, never()).deleteById(anyLong());
     }
 }
 
