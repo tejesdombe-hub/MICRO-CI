@@ -12,7 +12,6 @@ branches:
 jobs:
 build:
 
-```
 runs-on: ubuntu-latest
 
 steps:
@@ -108,4 +107,4 @@ steps:
         --build-arg SERVICE_MODULE=delivery-partner-service \
         -t delivery-partner-service:latest \
         .
-```
+
