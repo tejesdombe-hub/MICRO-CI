@@ -1,0 +1,48 @@
+name: Microservices CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Give Maven Permission
+        run: chmod +x mvnw
+
+      - name: Build Project
+        run: ./mvnw clean install -DskipTests
+
+      - name: Build Discovery Server Image
+        run: docker build -t discovery-server ./discovery-server
+
+      - name: Build Config Server Image
+        run: docker build -t config-server ./config-server
+
+      - name: Build API Gateway Image
+        run: docker build -t api-gateway ./api-gateway
+
+      - name: Build Auth Service Image
+        run: docker build -t auth-service ./auth-service
+
+      - name: Build User Service Image
+        run: docker build -t user-service ./user-service
