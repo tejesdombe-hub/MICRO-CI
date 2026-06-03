@@ -1,0 +1,145 @@
+name: Microservices CI-CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Give Maven Wrapper Permission
+        run: chmod +x mvnw
+
+      - name: Build Complete Project
+        run: ./mvnw clean install -DskipTests
+
+      - name: Run All Unit & Integration Tests
+        run: ./mvnw test -DfailIfNoTests=false
+
+      - name: Generate Test Report
+        run: ./mvnw surefire-report:report
+        if: always()
+
+      - name: Upload Test Results Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ github.run_number }}
+          path: |
+            **/target/surefire-reports/
+            **/target/site/
+
+      - name: Publish Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: '**/target/surefire-reports/TEST-*.xml'
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Discovery Server Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=discovery-server \
+            -t discovery-server:latest \
+            .
+
+      - name: Build Config Server Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=config-server \
+            -t config-server:latest \
+            .
+
+      - name: Build API Gateway Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=api-gateway \
+            -t api-gateway:latest \
+            .
+
+      - name: Build Auth Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=auth-service \
+            -t auth-service:latest \
+            .
+
+      - name: Build Customer Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=customer-service \
+            -t customer-service:latest \
+            .
+
+      - name: Build Restaurant Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=restaurant-service \
+            -t restaurant-service:latest \
+            .
+
+      - name: Build Menu Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=menu-service \
+            -t menu-service:latest \
+            .
+
+      - name: Build Order Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=order-service \
+            -t order-service:latest \
+            .
+
+      - name: Build Payment Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=payment-service \
+            -t payment-service:latest \
+            .
+
+      - name: Build Notification Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=notification-service \
+            -t notification-service:latest \
+            .
+
+      - name: Build Delivery Partner Service Image
+        if: success()
+        run: |
+          docker build \
+            --build-arg SERVICE_MODULE=delivery-partner-service \
+            -t delivery-partner-service:latest \
+            .
