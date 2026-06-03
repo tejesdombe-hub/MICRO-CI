@@ -1,48 +1,111 @@
 name: Microservices CI
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+  - main
 
-  pull_request:
-    branches:
-      - main
+pull_request:
+branches:
+  - main
 
 jobs:
+build:
 
-  build:
+  ```
+runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
 
-    steps:
+  - name: Setup Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 17
+      cache: maven
 
-      - name: Checkout Code
-        uses: actions/checkout@v4
+  - name: Give Maven Wrapper Permission
+    run: chmod +x mvnw
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+  - name: Build Complete Project
+    run: ./mvnw clean install -DskipTests
 
-      - name: Give Maven Permission
-        run: chmod +x mvnw
+  - name: Build Discovery Server Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=discovery-server \
+        -t discovery-server:latest \
+        .
 
-      - name: Build Project
-        run: ./mvnw clean install -DskipTests
+  - name: Build Config Server Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=config-server \
+        -t config-server:latest \
+        .
 
-      - name: Build Discovery Server Image
-        run: docker build -t discovery-server ./discovery-server
+  - name: Build API Gateway Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=api-gateway \
+        -t api-gateway:latest \
+        .
 
-      - name: Build Config Server Image
-        run: docker build -t config-server ./config-server
+  - name: Build Auth Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=auth-service \
+        -t auth-service:latest \
+        .
 
-      - name: Build API Gateway Image
-        run: docker build -t api-gateway ./api-gateway
+  - name: Build Customer Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=customer-service \
+        -t customer-service:latest \
+        .
 
-      - name: Build Auth Service Image
-        run: docker build -t auth-service ./auth-service
+  - name: Build Restaurant Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=restaurant-service \
+        -t restaurant-service:latest \
+        .
 
-      - name: Build User Service Image
-        run: docker build -t user-service ./user-service
+  - name: Build Menu Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=menu-service \
+        -t menu-service:latest \
+        .
+
+  - name: Build Order Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=order-service \
+        -t order-service:latest \
+        .
+
+  - name: Build Payment Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=payment-service \
+        -t payment-service:latest \
+        .
+
+  - name: Build Notification Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=notification-service \
+        -t notification-service:latest \
+        .
+
+  - name: Build Delivery Partner Service Image
+    run: |
+      docker build \
+        --build-arg SERVICE_MODULE=delivery-partner-service \
+        -t delivery-partner-service:latest \
+        .
+  ```
