@@ -10,5 +10,5 @@ import lombok.Data;
 public class OrderStatusUpdateRequestDto {
 
     @NotNull(message = "Order status is required")
-    private String status;
+    private OrderStatus orderStatus;
 }

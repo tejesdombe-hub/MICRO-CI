@@ -44,30 +44,29 @@ class MenuItemServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        requestDto = MenuItemRequestDto.builder()
-                .restaurantId(1L)
-                .name("Margherita Pizza")
-                .description("Classic Italian pizza")
-                .price(BigDecimal.valueOf(299.00))
-                .isAvailable(true)
-                .build();
+        requestDto = new MenuItemRequestDto();
+        requestDto.setRestaurantId(1L);
+        requestDto.setItemName("Margherita Pizza");
+        requestDto.setDescription("Classic Italian pizza");
+        requestDto.setPrice(299.00);
+        requestDto.setAvailability(true);
 
         responseDto = MenuItemResponseDto.builder()
                 .id(1L)
                 .restaurantId(1L)
-                .name("Margherita Pizza")
+                .itemName("Margherita Pizza")
                 .description("Classic Italian pizza")
-                .price(BigDecimal.valueOf(299.00))
-                .isAvailable(true)
+                .price(299.00)
+                .availability(true)
                 .build();
 
         menuItem = MenuItem.builder()
                 .id(1L)
                 .restaurantId(1L)
-                .name("Margherita Pizza")
+                .itemName("Margherita Pizza")
                 .description("Classic Italian pizza")
-                .price(BigDecimal.valueOf(299.00))
-                .isAvailable(true)
+                .price(299.00)
+                .availability(true)
                 .build();
     }
 
@@ -80,13 +79,13 @@ class MenuItemServiceImplTest {
         when(menuItemMapper.toResponse(menuItem)).thenReturn(responseDto);
 
         // Act
-        MenuItemResponseDto result = menuItemService.add(requestDto);
+        MenuItemResponseDto result = menuItemService.create(requestDto);
 
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getName()).isEqualTo("Margherita Pizza");
-        assertThat(result.isAvailable()).isTrue();
+        assertThat(result.getItemName()).isEqualTo("Margherita Pizza");
+        assertThat(result.getAvailability()).isTrue();
 
         verify(menuItemRepository).save(any(MenuItem.class));
     }
@@ -104,7 +103,7 @@ class MenuItemServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getName()).isEqualTo("Margherita Pizza");
+        assertThat(result.getItemName()).isEqualTo("Margherita Pizza");
 
         verify(menuItemRepository).findById(1L);
     }
@@ -130,19 +129,19 @@ class MenuItemServiceImplTest {
         MenuItem menuItem2 = MenuItem.builder()
                 .id(2L)
                 .restaurantId(1L)
-                .name("Pepperoni Pizza")
+                .itemName("Pepperoni Pizza")
                 .description("Spicy pizza")
-                .price(BigDecimal.valueOf(349.00))
-                .isAvailable(true)
+                .price(349.00)
+                .availability(true)
                 .build();
 
         MenuItemResponseDto responseDto2 = MenuItemResponseDto.builder()
                 .id(2L)
                 .restaurantId(1L)
-                .name("Pepperoni Pizza")
+                .itemName("Pepperoni Pizza")
                 .description("Spicy pizza")
-                .price(BigDecimal.valueOf(349.00))
-                .isAvailable(true)
+                .price(349.00)
+                .availability(true)
                 .build();
 
         when(menuItemRepository.findByRestaurantId(1L)).thenReturn(Arrays.asList(menuItem, menuItem2));
@@ -150,12 +149,12 @@ class MenuItemServiceImplTest {
         when(menuItemMapper.toResponse(menuItem2)).thenReturn(responseDto2);
 
         // Act
-        List<MenuItemResponseDto> results = menuItemService.getByRestaurantId(1L);
+        List<MenuItemResponseDto> results = menuItemService.getByRestaurant(1L);
 
         // Assert
         assertThat(results).hasSize(2);
-        assertThat(results.get(0).getName()).isEqualTo("Margherita Pizza");
-        assertThat(results.get(1).getName()).isEqualTo("Pepperoni Pizza");
+        assertThat(results.get(0).getItemName()).isEqualTo("Margherita Pizza");
+        assertThat(results.get(1).getItemName()).isEqualTo("Pepperoni Pizza");
 
         verify(menuItemRepository).findByRestaurantId(1L);
     }
@@ -164,16 +163,14 @@ class MenuItemServiceImplTest {
     @DisplayName("Should update menu item successfully")
     void testUpdateMenuItemSuccess() {
         // Arrange
-        MenuItemRequestDto updateRequest = MenuItemRequestDto.builder()
-                .restaurantId(1L)
-                .name("Margherita Pizza Updated")
-                .description("Updated description")
-                .price(BigDecimal.valueOf(319.00))
-                .isAvailable(true)
-                .build();
+        MenuItemRequestDto updateRequest = new MenuItemRequestDto();
+        updateRequest.setRestaurantId(1L);
+        updateRequest.setItemName("Margherita Pizza Updated");
+        updateRequest.setDescription("Updated description");
+        updateRequest.setPrice(319.00);
+        updateRequest.setAvailability(true);
 
         when(menuItemRepository.findById(1L)).thenReturn(Optional.of(menuItem));
-        doNothing().when(menuItemMapper).updateEntity(menuItem, updateRequest);
         when(menuItemRepository.save(menuItem)).thenReturn(menuItem);
         when(menuItemMapper.toResponse(menuItem)).thenReturn(responseDto);
 
@@ -185,21 +182,6 @@ class MenuItemServiceImplTest {
 
         verify(menuItemRepository).findById(1L);
         verify(menuItemRepository).save(menuItem);
-    }
-
-    @Test
-    @DisplayName("Should toggle menu item availability")
-    void testToggleAvailability() {
-        // Arrange
-        when(menuItemRepository.findById(1L)).thenReturn(Optional.of(menuItem));
-        when(menuItemRepository.save(any(MenuItem.class))).thenReturn(menuItem);
-
-        // Act
-        menuItemService.toggleAvailability(1L);
-
-        // Assert
-        verify(menuItemRepository).findById(1L);
-        verify(menuItemRepository).save(any(MenuItem.class));
     }
 
     @Test
@@ -234,12 +216,11 @@ class MenuItemServiceImplTest {
     @DisplayName("Should validate positive price")
     void testValidatePositivePrice() {
         // Arrange
-        MenuItemRequestDto invalidRequest = MenuItemRequestDto.builder()
-                .restaurantId(1L)
-                .name("Pizza")
-                .price(BigDecimal.valueOf(-100))
-                .isAvailable(true)
-                .build();
+        MenuItemRequestDto invalidRequest = new MenuItemRequestDto();
+        invalidRequest.setRestaurantId(1L);
+        invalidRequest.setItemName("Pizza");
+        invalidRequest.setPrice(-100.0);
+        invalidRequest.setAvailability(true);
 
         // Act & Assert
         assertThat(invalidRequest.getPrice()).isNegative();

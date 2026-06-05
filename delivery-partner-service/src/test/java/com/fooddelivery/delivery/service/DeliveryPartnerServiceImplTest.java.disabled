@@ -1,11 +1,11 @@
 package com.fooddelivery.delivery.service;
 
+import com.fooddelivery.common.enums.DeliveryStatus;
 import com.fooddelivery.common.exception.ResourceNotFoundException;
 import com.fooddelivery.delivery.dto.DeliveryPartnerRequestDto;
 import com.fooddelivery.delivery.dto.DeliveryPartnerResponseDto;
 import com.fooddelivery.delivery.dto.DeliveryStatusUpdateRequestDto;
 import com.fooddelivery.delivery.entity.DeliveryPartner;
-import com.fooddelivery.delivery.entity.DeliveryStatus;
 import com.fooddelivery.delivery.mapper.DeliveryPartnerMapper;
 import com.fooddelivery.delivery.repository.DeliveryPartnerRepository;
 import com.fooddelivery.delivery.service.impl.DeliveryPartnerServiceImpl;

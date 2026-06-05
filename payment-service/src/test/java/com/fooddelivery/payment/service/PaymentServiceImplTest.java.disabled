@@ -1,10 +1,10 @@
 package com.fooddelivery.payment.service;
 
+import com.fooddelivery.common.enums.PaymentStatus;
 import com.fooddelivery.common.exception.ResourceNotFoundException;
 import com.fooddelivery.payment.dto.PaymentRequestDto;
 import com.fooddelivery.payment.dto.PaymentResponseDto;
 import com.fooddelivery.payment.entity.Payment;
-import com.fooddelivery.payment.entity.PaymentStatus;
 import com.fooddelivery.payment.mapper.PaymentMapper;
 import com.fooddelivery.payment.repository.PaymentRepository;
 import com.fooddelivery.payment.service.impl.PaymentServiceImpl;
